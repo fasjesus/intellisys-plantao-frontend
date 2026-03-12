@@ -1,0 +1,35 @@
+/* src/index.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Montserrat:wght@700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-intellisys-red: #B5071A;
+  --color-intellisys-gray-form: rgba(30, 30, 30, 0.11);
+  --color-intellisys-text: #1E1E1E;
+  
+  --font-montserrat: "Montserrat", sans-serif;
+  --font-inter: "Inter", sans-serif;
+}
+
+.diagonal-bg {
+  /* Mobile */
+  clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 25% 100%);
+}
+
+@media (min-width: 768px) {
+  .diagonal-bg {
+    /* Desktop */
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 4% 100%);
+  }
+}
+
+@layer base {
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: white;
+    color: var(--color-intellisys-text);
+    font-family: var(--font-inter);
+  }
+}
