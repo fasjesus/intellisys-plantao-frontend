@@ -19,9 +19,9 @@ export function Details() {
   };
 
   return (
-    <div className="p-8 bg-white min-h-full font-inter pt-6">
+    <div className="p-4 md:p-8 bg-white min-h-full font-inter pt-6">
       {/* HEADER PRINCIPAL */}
-      <div className="flex flex-col items-center mb-6 md:mb-8 max-w-5xl mx-auto w-full">
+      <div className="flex flex-col items-center mb-6 md:mb-8 max-w-5xl mx-auto w-full md:pt-6">
         <div className="flex items-center justify-between w-full mb-4 md:mb-2">
              <button onClick={() => navigate('/users')} className="text-gray-800 hover:opacity-70 outline-none">
                <ArrowLeft size={window.innerWidth < 768 ? 24 : 32} />
@@ -29,7 +29,7 @@ export function Details() {
              <div className="text-center">
                <h2 className="text-xl md:text-2xl font-bold text-[#B5071A]">Detalhes do Colaborador</h2>
                <p className="text-[12px] md:text-sm text-gray-500 font-medium">
-                Informações completas do colaborador.
+                Veja aqui os detalhes do colaborador.
                </p>
              </div>
              <div className="w-8"></div>
@@ -42,13 +42,13 @@ export function Details() {
         <div className="border border-gray-100 rounded-2xl p-5 shadow-sm bg-white flex flex-col">
           <div className="mb-4">
              <h3 className="text-[#B5071A] font-bold flex items-center gap-2 text-sm uppercase tracking-wider">
-               <ShieldCheck size={18} /> Identificação Corporativa
+               <ShieldCheck size={18} /> Identificação 
              </h3>
-             {/* TAG DE STATUS */}
+             {/* TAG DE STATUS 
             <span className={`px-0 py-0.5 text-[10px] font-bold rounded-md
               ${user.status === 'Ativo' ? 'bg-green-50 text-green-600' : 'bg-red-100 text-red-600'}`}>
               {user.status}
-            </span>
+            </span> */}
           </div>
           
           <div className="flex flex-row-reverse gap-6 items-center justify-between flex-1">
@@ -88,14 +88,14 @@ export function Details() {
             <Mail size={18} /> Contato e Localização
           </h3>
           <div className="space-y-5">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
               <div className="p-2 bg-gray-50 rounded-lg"><Mail size={16} className="text-gray-400" /></div>
               <div>
                 <p className="text-[10px] text-gray-400 font-bold uppercase">E-mail Corporativo</p>
                 <p className="text-[14px] font-bold text-gray-600">{user.email}</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
               <div className="p-2 bg-gray-50 rounded-lg"><Phone size={16} className="text-gray-400" /></div>
               <div>
                 <p className="text-[10px] text-gray-400 font-bold uppercase">Telefone / Ramal</p>
@@ -109,7 +109,7 @@ export function Details() {
         {/* CARD 3: INFORMAÇÕES PROFISSIONAIS */}
         <div className="border border-gray-100 rounded-2xl p-5 shadow-sm bg-white md:col-span-2">
           <h3 className="text-[#B5071A] font-bold mb-6 flex items-center gap-2 text-sm uppercase tracking-wider">
-            <Briefcase size={18} /> Informações Profissionais
+            <Briefcase size={18} /> Especificação
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
             <div>
@@ -131,7 +131,7 @@ export function Details() {
       </div>
 
       {/* BOTÕES DE AÇÃO */}
-      <div className="flex flex-col md:flex-row justify-end gap-3 mt-8 md:mt-12">
+      <div className="flex flex-col md:px-32 md:flex-row justify-end gap-3 mt-8 md:mt-12">
         <button className="w-full md:w-auto bg-[#B5071A] text-white px-12 py-3 md:py-2.5 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-all">Editar</button>
         <button className="w-full md:w-auto bg-[#B5071A] text-white px-12 py-3 md:py-2.5 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-all">Gerar Relatório</button>
         <button onClick={() => navigate('/users')} className="w-full md:w-auto bg-[#B5071A] text-white px-12 py-3 md:py-2.5 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-all">Plantões</button>
