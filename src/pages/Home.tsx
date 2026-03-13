@@ -76,20 +76,57 @@ export function Home() {
           </form>
         </div>
 
-        {/* GRID DE FERRAMENTAS: Gap reduzido para subir os ícones */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-16 gap-y-6 md:gap-8 w-full max-w-4xl pb-8">
-          <div className="active:scale-95 transition-transform md:active:scale-100 flex flex-col items-center">
-            <ToolCard label="Escala" icon={<Calendar size={36} />} onClick={() => navigate('/scale/month')} />
-          </div>
-          <div className="active:scale-95 transition-transform md:active:scale-100 flex flex-col items-center">
-            <ToolCard label="Plantões" icon={<Clock size={36} />} onClick={() => navigate('/plantoes')} />
-          </div>
-          <div className="active:scale-95 transition-transform md:active:scale-100 flex flex-col items-center">
-            <ToolCard label="Colaboradores" icon={<Users size={36} />} onClick={() => navigate('/users')} />
-          </div>
-          <div className="active:scale-95 transition-transform md:active:scale-100 flex flex-col items-center">
-            <ToolCard label="Relatórios" icon={<CalendarDays size={36} />} onClick={() => navigate('/relatorios')} />
-          </div>
+        {/* GRID DE FERRAMENTAS: Mobile (Lista de botões largos) / Desktop (Grid de cards) */}
+        <div className="flex flex-col md:grid md:grid-cols-4 gap-3 md:gap-8 w-full max-w-4xl pb-8">
+          
+          {/* Botão Escala */}
+          <button 
+            onClick={() => navigate('/scale/month')}
+            className="w-full md:w-auto active:scale-[0.98] transition-all flex items-center md:flex-col justify-start md:justify-center bg-white md:bg-transparent border md:border-none border-gray-100 p-4 md:p-0 rounded-2xl md:rounded-none shadow-sm md:shadow-none gap-4 md:gap-2 group"
+          >
+            <div className="p-2 md:p-0 bg-[#B5071A]/5 md:bg-transparent rounded-xl md:rounded-none text-[#B5071A] md:text-gray-600 group-hover:text-[#B5071A] transition-colors">
+              <div className="hidden md:block"><ToolCard label="Escala" icon={<Calendar size={36} />} /></div>
+              <div className="md:hidden"><Calendar size={28} /></div>
+            </div>
+            <span className="md:hidden font-bold text-gray-700 text-sm uppercase tracking-wide">Escala</span>
+          </button>
+
+          {/* Botão Plantões */}
+          <button 
+            onClick={() => navigate('/plantoes')}
+            className="w-full md:w-auto active:scale-[0.98] transition-all flex items-center md:flex-col justify-start md:justify-center bg-white md:bg-transparent border md:border-none border-gray-100 p-4 md:p-0 rounded-2xl md:rounded-none shadow-sm md:shadow-none gap-4 md:gap-2 group"
+          >
+            <div className="p-2 md:p-0 bg-[#B5071A]/5 md:bg-transparent rounded-xl md:rounded-none text-[#B5071A] md:text-gray-600 group-hover:text-[#B5071A] transition-colors">
+              <div className="hidden md:block"><ToolCard label="Plantões" icon={<Clock size={36} />} /></div>
+              <div className="md:hidden"><Clock size={28} /></div>
+            </div>
+            <span className="md:hidden font-bold text-gray-700 text-sm uppercase tracking-wide">Plantões</span>
+          </button>
+
+          {/* Botão Colaboradores */}
+          <button 
+            onClick={() => navigate('/users')}
+            className="w-full md:w-auto active:scale-[0.98] transition-all flex items-center md:flex-col justify-start md:justify-center bg-white md:bg-transparent border md:border-none border-gray-100 p-4 md:p-0 rounded-2xl md:rounded-none shadow-sm md:shadow-none gap-4 md:gap-2 group"
+          >
+            <div className="p-2 md:p-0 bg-[#B5071A]/5 md:bg-transparent rounded-xl md:rounded-none text-[#B5071A] md:text-gray-600 group-hover:text-[#B5071A] transition-colors">
+              <div className="hidden md:block"><ToolCard label="Colaboradores" icon={<Users size={36} />} /></div>
+              <div className="md:hidden"><Users size={28} /></div>
+            </div>
+            <span className="md:hidden font-bold text-gray-700 text-sm uppercase tracking-wide">Colaboradores</span>
+          </button>
+
+          {/* Botão Relatórios */}
+          <button 
+            onClick={() => navigate('/relatorios')}
+            className="w-full md:w-auto active:scale-[0.98] transition-all flex items-center md:flex-col justify-start md:justify-center bg-white md:bg-transparent border md:border-none border-gray-100 p-4 md:p-0 rounded-2xl md:rounded-none shadow-sm md:shadow-none gap-4 md:gap-2 group"
+          >
+            <div className="p-2 md:p-0 bg-[#B5071A]/5 md:bg-transparent rounded-xl md:rounded-none text-[#B5071A] md:text-gray-600 group-hover:text-[#B5071A] transition-colors">
+              <div className="hidden md:block"><ToolCard label="Relatórios" icon={<CalendarDays size={36} />} /></div>
+              <div className="md:hidden"><CalendarDays size={28} /></div>
+            </div>
+            <span className="md:hidden font-bold text-gray-700 text-sm uppercase tracking-wide">Relatórios</span>
+          </button>
+
         </div>
       </main>
 
