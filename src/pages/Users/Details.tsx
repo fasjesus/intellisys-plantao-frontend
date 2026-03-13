@@ -19,9 +19,9 @@ export function Details() {
   };
 
   return (
-    <div className="p-8 bg-white min-h-full font-inter">
+    <div className="p-8 bg-white min-h-full font-inter pt-6">
       {/* HEADER PRINCIPAL */}
-      <div className="flex flex-col items-center mb-6 md:mb-8 max-w-5xl mx-auto w-full pt-6">
+      <div className="flex flex-col items-center mb-6 md:mb-8 max-w-5xl mx-auto w-full">
         <div className="flex items-center justify-between w-full mb-4 md:mb-2">
              <button onClick={() => navigate('/users')} className="text-gray-800 hover:opacity-70 outline-none">
                <ArrowLeft size={window.innerWidth < 768 ? 24 : 32} />
