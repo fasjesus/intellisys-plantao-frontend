@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, cloneElement } from 'react';
 import { Calendar, Users, Clock, CalendarDays, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { SearchBar } from '../components/SearchBar';
@@ -76,57 +76,45 @@ export function Home() {
           </form>
         </div>
 
-        {/* GRID DE FERRAMENTAS: Mobile (Lista de botões largos) / Desktop (Grid de cards) */}
+        {/* GRID DE FERRAMENTAS: Mobile (Estilo SearchBar) / Desktop (Cards) */}
         <div className="flex flex-col md:grid md:grid-cols-4 gap-3 md:gap-8 w-full max-w-4xl pb-8">
           
-          {/* Botão Escala */}
-          <button 
-            onClick={() => navigate('/scale/month')}
-            className="w-full md:w-auto active:scale-[0.98] transition-all flex items-center md:flex-col justify-start md:justify-center bg-white md:bg-transparent border md:border-none border-gray-100 p-4 md:p-0 rounded-2xl md:rounded-none shadow-sm md:shadow-none gap-4 md:gap-2 group"
-          >
-            <div className="p-2 md:p-0 bg-[#B5071A]/5 md:bg-transparent rounded-xl md:rounded-none text-[#B5071A] md:text-gray-600 group-hover:text-[#B5071A] transition-colors">
-              <div className="hidden md:block"><ToolCard label="Escala" icon={<Calendar size={36} />} /></div>
-              <div className="md:hidden"><Calendar size={28} /></div>
-            </div>
-            <span className="md:hidden font-bold text-gray-700 text-sm uppercase tracking-wide">Escala</span>
-          </button>
+          {[
+            { label: "Escala", icon: <Calendar size={20} />, path: '/scale/month' },
+            { label: "Plantões", icon: <Clock size={20} />, path: '/plantoes' },
+            { label: "Colaboradores", icon: <Users size={20} />, path: '/users' },
+            { label: "Relatórios", icon: <CalendarDays size={20} />, path: '/relatorios' },
+          ].map((item) => (
+            <button 
+              key={item.label}
+              onClick={() => navigate(item.path)}
+              className="
+                w-full md:w-auto transition-all active:scale-[0.98]
+                flex items-center md:flex-col justify-center md:justify-center 
+                bg-[#B5071A]  md:bg-transparent 
+                border border-gray-200 md:border-none 
+                h-12 md:h-auto px-4 md:px-0 
+                rounded-full md:rounded-none 
+                shadow-sm md:shadow-none 
+                gap-3 md:gap-2 group
+              "
+            >
+              {/* Ícone: No desktop usa o ToolCard, no mobile o ícone puro */}
+              <div className="text-white md:text-gray-600 group-hover:text-[#B5071A] transition-colors shrink-0">
+                <div className="hidden md:block">
+                  <ToolCard label={item.label} icon={cloneElement(item.icon as React.ReactElement, { size: 36 })} />
+                </div>
+                <div className="md:hidden flex items-center justify-center">
+                  {item.icon}
+                </div>
+              </div>
 
-          {/* Botão Plantões */}
-          <button 
-            onClick={() => navigate('/plantoes')}
-            className="w-full md:w-auto active:scale-[0.98] transition-all flex items-center md:flex-col justify-start md:justify-center bg-white md:bg-transparent border md:border-none border-gray-100 p-4 md:p-0 rounded-2xl md:rounded-none shadow-sm md:shadow-none gap-4 md:gap-2 group"
-          >
-            <div className="p-2 md:p-0 bg-[#B5071A]/5 md:bg-transparent rounded-xl md:rounded-none text-[#B5071A] md:text-gray-600 group-hover:text-[#B5071A] transition-colors">
-              <div className="hidden md:block"><ToolCard label="Plantões" icon={<Clock size={36} />} /></div>
-              <div className="md:hidden"><Clock size={28} /></div>
-            </div>
-            <span className="md:hidden font-bold text-gray-700 text-sm uppercase tracking-wide">Plantões</span>
-          </button>
-
-          {/* Botão Colaboradores */}
-          <button 
-            onClick={() => navigate('/users')}
-            className="w-full md:w-auto active:scale-[0.98] transition-all flex items-center md:flex-col justify-start md:justify-center bg-white md:bg-transparent border md:border-none border-gray-100 p-4 md:p-0 rounded-2xl md:rounded-none shadow-sm md:shadow-none gap-4 md:gap-2 group"
-          >
-            <div className="p-2 md:p-0 bg-[#B5071A]/5 md:bg-transparent rounded-xl md:rounded-none text-[#B5071A] md:text-gray-600 group-hover:text-[#B5071A] transition-colors">
-              <div className="hidden md:block"><ToolCard label="Colaboradores" icon={<Users size={36} />} /></div>
-              <div className="md:hidden"><Users size={28} /></div>
-            </div>
-            <span className="md:hidden font-bold text-gray-700 text-sm uppercase tracking-wide">Colaboradores</span>
-          </button>
-
-          {/* Botão Relatórios */}
-          <button 
-            onClick={() => navigate('/relatorios')}
-            className="w-full md:w-auto active:scale-[0.98] transition-all flex items-center md:flex-col justify-start md:justify-center bg-white md:bg-transparent border md:border-none border-gray-100 p-4 md:p-0 rounded-2xl md:rounded-none shadow-sm md:shadow-none gap-4 md:gap-2 group"
-          >
-            <div className="p-2 md:p-0 bg-[#B5071A]/5 md:bg-transparent rounded-xl md:rounded-none text-[#B5071A] md:text-gray-600 group-hover:text-[#B5071A] transition-colors">
-              <div className="hidden md:block"><ToolCard label="Relatórios" icon={<CalendarDays size={36} />} /></div>
-              <div className="md:hidden"><CalendarDays size={28} /></div>
-            </div>
-            <span className="md:hidden font-bold text-gray-700 text-sm uppercase tracking-wide">Relatórios</span>
-          </button>
-
+              {/* Texto: Mesma fonte e alinhamento do placeholder da busca */}
+              <span className="md:hidden text-white text-xs uppercase tracking-wider">
+                {item.label}
+              </span>
+            </button>
+          ))}
         </div>
       </main>
 
