@@ -43,7 +43,7 @@ export function All() {
              </button>
              <div className="text-center">
                <h2 className="text-xl md:text-2xl font-bold text-[#B5071A]">Colaboradores</h2>
-               <p className="text-[10px] md:text-sm text-gray-500 font-medium">Veja aqui sua equipe de colaboradores.</p>
+               <p className="text-[12px] md:text-sm text-gray-500 font-medium">Veja aqui sua equipe de colaboradores.</p>
              </div>
              <div className="w-8"></div>
         </div>
