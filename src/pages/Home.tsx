@@ -83,7 +83,7 @@ export function Home() {
             { label: "Escala", icon: <Calendar size={20} />, path: '/scale/month' },
             { label: "Plantões", icon: <Clock size={20} />, path: '/plantoes' },
             { label: "Colaboradores", icon: <Users size={20} />, path: '/users' },
-            { label: "Relatórios", icon: <CalendarDays size={20} />, path: '/relatorios' },
+            { label: "Relatórios", icon: <CalendarDays size={20} />, path: '/reports' },
           ].map((item) => (
             <button 
               key={item.label}

@@ -6,6 +6,7 @@ import { Month } from './pages/Scale/Month';
 import { Year } from './pages/Scale/Year';
 import { All as UsersAll } from './pages/Users/All';
 import { Details } from './pages/Users/Details';
+import { Reports } from './pages/Reports';
 
 export function App() {
   return (
@@ -20,6 +21,7 @@ export function App() {
         <Route path="/scale/year" element={<Year />} />
         <Route path="/users" element={<UsersAll />} />
         <Route path="/users/details/:id" element={<Details />} />
+        <Route path="/reports" element={<Reports />} />
       </Route>
 
       {/* Rota de erro 404 */}
