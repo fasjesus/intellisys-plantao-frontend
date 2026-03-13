@@ -20,22 +20,22 @@ export function Login() {
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-white">
-      {/* HEADER: Ajustado para centralizar logo no mobile */}
-      <header className="relative h-20 flex items-center justify-center md:justify-start px-6 md:px-10 overflow-hidden bg-white shadow-md z-20">
+      {/* HEADER: */}
+      <header className="relative h-18 md:h-20 flex items-center justify-between px-6 md:px-10 bg-white shadow-md z-30">
         <div className="z-10 shrink-0">
-          <img 
-            src={logo} 
-            alt="Intellisys" 
-            className="h-6 md:h-8 w-auto object-contain transition-all" 
-            />
+          <img src={logo} alt="Intellisys" className="h-6 md:h-8 w-auto object-contain" />
         </div>
         
-        {/* Faixa Diagonal: Visível apenas em tablets e desktops */}
+        {/* Faixa Diagonal: tablets e desktops */}
         <div className="absolute right-0 top-0 h-full w-[78%] bg-[#B5071A] diagonal-bg hidden md:block"></div>
+
+        {/* Diagonal Mobile */}
+        <div className="absolute right-0 top-0 h-full w-[40%] bg-[#B5071A] diagonal-bg flex md:hidden items-center justify-end px-4 gap-4">
+        </div>
       </header>
 
       <main className="flex-grow flex flex-col items-center justify-center px-6 py-10">
-        {/* TEXTO DE BOAS-VINDAS: Fontes fluidas */}
+        {/* TEXTO */}
         <div className="text-center mb-8 max-w-[90%]">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800 font-montserrat">
             Acesse seu <span className="text-[#B5071A]">Perfil</span>
@@ -45,7 +45,7 @@ export function Login() {
           </p>
         </div>
 
-        {/* CARD DE LOGIN: Largura adaptável */}
+        {/* CARD DE LOGIN: */}
         <div className="bg-gray-100 p-8 md:p-10 rounded-2xl shadow-sm w-full max-w-[450px]">
           <form className="space-y-6" onSubmit={handleLogin}>
             <Input 
