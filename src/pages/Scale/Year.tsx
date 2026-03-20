@@ -71,7 +71,7 @@ export function Year() {
            Imprimir Calendário Anual
          </button>
          <button 
-           onClick={() => navigate('/holidays/month')} 
+           onClick={() => navigate('/scale/month')} 
            className="bg-gray-800 text-white px-8 py-2.5 rounded-xl font-bold text-sm shadow-md hover:bg-gray-900 transition-colors"
          >
            Voltar para Mês

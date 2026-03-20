@@ -15,7 +15,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     { label: "COLABORADORES", path: "/users" },
     { label: "PLANTÕES", path: "/plantoes" },
     { label: "ESCALA", path: "/scale/month" },
-    { label: "RELATÓRIOS", path: "/relatorios" },
+    { label: "RELATÓRIOS", path: "/reports" },
   ];
 
   return (

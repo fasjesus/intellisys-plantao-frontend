@@ -64,11 +64,10 @@ export function Login() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />  
-
+            <p> Esqueci minha senha</p>
+            
             <div className="flex justify-center pt-2 w-full">
-              {/* Envolvemos o Button em uma div com w-full e justify-center.
-                Isso força o alinhamento central independente do breakpoint.
-              */}
+              
               <div className="flex justify-center">
                 <Button label="Entrar" type="submit" />
               </div>
@@ -77,7 +76,7 @@ export function Login() {
         </div>
       </main>
 
-      {/* FOOTER: Texto menor em telas pequenas para evitar quebra de linha */}
+      {/* FOOTER: */}
       <footer className="bg-[#545454] text-white py-6 text-center text-[10px] md:text-sm tracking-wide px-4">
         Intellisys Informática Ltda / Todos os direitos reservados (c) 2026
       </footer>

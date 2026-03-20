@@ -15,7 +15,7 @@ export function App() {
       <Route path="/" element={<Login />} />
       <Route path="/home" element={<Home />} />
 
-      {/* Telas que USAM o AppLayout */}
+      {/* Telas com AppLayout */}
       <Route element={<AppLayout />}>
         <Route path="/scale/month" element={<Month />} />
         <Route path="/scale/year" element={<Year />} />

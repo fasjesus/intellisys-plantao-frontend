@@ -5,26 +5,26 @@ import {
   FileText, 
   Calendar as CalendarIcon, 
   User as UserIcon,
-  Download
+  Download,
+  AlertCircle
 } from 'lucide-react';
 
 export function Reports() {
   const navigate = useNavigate();
   
-  // Estados para os filtros
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [employee, setEmployee] = useState('');
+  const [onlyUnpaid, setOnlyUnpaid] = useState(false); 
 
   const handleGenerateReport = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Gerando relatório para:", { startDate, endDate, employee });
-    // Aqui entraria a lógica de integração com o back-end
+    console.log("Gerando relatório para:", { startDate, endDate, employee, onlyUnpaid });
     alert("Relatório solicitado! O download iniciará em breve.");
   };
 
   return (
-    <div className="p-4 md:p-12 bg-white min-h-full font-inter flex flex-col">
+    <div className="p-6 md:p-12 bg-white min-h-full font-inter flex flex-col">
       
       {/* HEADER DA PÁGINA */}
       <div className="flex flex-col items-center mb-8 md:mb-12 max-w-2xl mx-auto w-full">
@@ -99,33 +99,50 @@ export function Reports() {
             </div>
           </div>
 
-          {/* CARD INFORMATIVO (Destaque) */}
+          {/* SEÇÃO: FILTRO FINANCEIRO (Checkbox) */}
+          <div className="pt-2">
+            <label className="flex items-center gap-3 cursor-pointer group w-fit">
+              <div className="relative flex items-center">
+                <input 
+                  type="checkbox" 
+                  checked={onlyUnpaid}
+                  onChange={(e) => setOnlyUnpaid(e.target.checked)}
+                  className="peer appearance-none w-5 h-5 border-2 border-gray-300 rounded md:rounded-md checked:bg-[#B5071A] checked:border-[#B5071A] transition-all"
+                />
+                <svg className="absolute w-3.5 h-3.5 text-white p-0.5 pointer-events-none hidden peer-checked:block" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <span className="text-xs md:text-sm text-gray-600 group-hover:text-[#B5071A] transition-colors">
+                Exibir apenas plantões com pagamento em aberto.
+              </span>
+            </label>
+          </div>
+
+          {/* CARD INFORMATIVO */}
           <div className="bg-gray-50 border border-dashed border-gray-200 rounded-xl p-6 flex items-start gap-4">
             <FileText className="text-[#B5071A] shrink-0" size={24} />
             <div>
               <p className="text-xs font-bold text-gray-700 uppercase mb-1">Resumo da Emissão</p>
               <p className="text-[11px] text-gray-500 leading-relaxed">
                 O arquivo será gerado em formato PDF contendo o histórico de plantões, 
-                faltas e horas extras do período selecionado.
+                faltas e horas extras do período selecionado{onlyUnpaid ? " (apenas pendentes de pagamento)" : ""}.
               </p>
             </div>
           </div>
 
-          {/* BOTÃO DE AÇÃO */}
-          <button 
-            type="submit"
-            className="w-full bg-[#B5071A] text-white h-14 rounded-xl font-bold text-sm shadow-md flex items-center justify-center gap-3 active:scale-[0.98] transition-all mt-4"
-          >
-            <Download size={20} />
-            GERAR RELATÓRIO AGORA
-          </button>
+          {/* BOTÃO DE AÇÃO CENTRALIZADO */}
+          <div className="flex justify-center pt-4">
+            <button 
+              type="submit"
+              className="w-full md:w-auto bg-[#B5071A] text-white px-12 py-3 md:h-10 hover:bg-[#9a0615] rounded-xl font-bold text-xs shadow-md active:scale-95 transition-all flex items-center justify-center gap-2"
+            >
+              <Download size={20} />
+              GERAR RELATÓRIO AGORA
+            </button>
+          </div>
         </form>
       </main>
-
-      {/* FOOTER */}
-      <footer className="mt-auto bg-[#545454] text-white py-6 text-center text-[10px] md:text-sm px-4 -mx-4 md:-mx-12 shrink-0">
-        Intellisys Informática Ltda / Todos os direitos reservados (c) 2026
-      </footer>
     </div>
   );
 }
