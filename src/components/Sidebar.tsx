@@ -1,10 +1,10 @@
 // src/components/Sidebar.tsx
 import { useLocation, useNavigate } from 'react-router-dom';
-import { X } from 'lucide-react'; // Ícone para fechar no mobile
+import { X } from 'lucide-react'; 
 
 interface SidebarProps {
   isOpen: boolean;
-  onClose?: () => void; // Prop opcional para fechar o menu
+  onClose?: () => void; 
 }
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
@@ -13,7 +13,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const menuItems = [
     { label: "COLABORADORES", path: "/users" },
-    { label: "PLANTÕES", path: "/plantoes" },
+    { label: "PLANTÕES", path: "/duty" },
     { label: "ESCALA", path: "/scale/month" },
     { label: "RELATÓRIOS", path: "/reports" },
   ];
@@ -36,7 +36,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           : 'w-64 -translate-x-full md:w-0 md:opacity-0 md:pointer-events-none'}
       `}
     >
-      {/* Botão de Fechar - Visível apenas no Mobile quando aberto */}
+      {/* Botão de Fechar - Mobile*/}
       <div className="flex justify-end p-4 md:hidden">
         <button 
           onClick={onClose}
