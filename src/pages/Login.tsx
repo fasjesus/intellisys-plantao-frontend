@@ -49,7 +49,7 @@ export function Login() {
         <div className="bg-gray-100 p-8 md:p-10 rounded-2xl shadow-sm w-full max-w-[450px]">
           <form className="space-y-6" onSubmit={handleLogin}>
             <Input 
-              label="Login" 
+              label="E-mail" 
               placeholder="Digite seu email" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -57,15 +57,24 @@ export function Login() {
             />
 
             <Input 
-              label="Password" 
+              label="Senha" 
               isPassword 
               placeholder="Digite sua senha" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />  
-            <p> Esqueci minha senha</p>
-            
+
+            <div className="flex justify-start pr-1">
+              <button 
+                type="button"
+                onClick={() => navigate('/recovery')} 
+                className="text-[10px] md:text-xs text-gray-400 hover:text-[#B5071A] transition-colors font-medium underline-offset-4 hover:underline"
+              >
+                Esqueceu sua senha? <span className="font-bold">Clique aqui</span>
+              </button>
+            </div>
+
             <div className="flex justify-center pt-2 w-full">
               
               <div className="flex justify-center">

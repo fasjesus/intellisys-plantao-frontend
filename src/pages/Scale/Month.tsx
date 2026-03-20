@@ -125,7 +125,7 @@ export function Month() {
           </div>
           
           {/* SCROLL: */}
-          <div className="max-h-[450px] overflow-y-auto custom-scrollbar">
+          <div className="max-h-[360px] overflow-y-auto custom-scrollbar">
             <div className="grid grid-cols-7 bg-gray-200 gap-[1px]">
               {weeks.flatMap((week) => week).map((day, i) => {
                 if (!day) return <div key={`empty-${i}`} className="h-28 bg-white" />;

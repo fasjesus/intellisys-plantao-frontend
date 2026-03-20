@@ -20,7 +20,7 @@ export function Home() {
     } else if (query.includes('colab') || query.includes('equipe') || query.includes('user')) {
       navigate('/users');
     } else if (query.includes('plant') || query.includes('hora')) {
-      navigate('/plantoes');
+      navigate('/duty');
     } else {
       navigate(`/users?search=${encodeURIComponent(searchTerm)}`);
     }
@@ -81,7 +81,7 @@ export function Home() {
           
           {[
             { label: "Escala", icon: <Calendar size={20} />, path: '/scale/month' },
-            { label: "Plantões", icon: <Clock size={20} />, path: '/plantoes' },
+            { label: "Plantões", icon: <Clock size={20} />, path: '/duty' },
             { label: "Colaboradores", icon: <Users size={20} />, path: '/users' },
             { label: "Relatórios", icon: <CalendarDays size={20} />, path: '/reports' },
           ].map((item) => (
@@ -94,7 +94,7 @@ export function Home() {
                 bg-[#B5071A]  md:bg-transparent 
                 border border-gray-200 md:border-none 
                 h-12 md:h-auto px-4 md:px-0 
-                rounded-full md:rounded-none 
+                rounded-2xl md:rounded-none 
                 shadow-sm md:shadow-none 
                 gap-3 md:gap-2 group
               "

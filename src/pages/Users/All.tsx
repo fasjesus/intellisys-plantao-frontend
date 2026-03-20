@@ -76,7 +76,7 @@ export function All() {
         </div>
 
         {/* LISTA COM SCROLL */}
-        <div className="max-h-[50vh] md:max-h-[400px] overflow-y-auto pr-2 custom-scrollbar space-y-3 md:space-y-4">
+        <div className="max-h-[40vh] md:max-h-[360px] overflow-y-auto pr-2 custom-scrollbar space-y-3 md:space-y-4">
           {filteredCollaborators.map((user) => (
             <div 
               key={user.id}

@@ -24,11 +24,11 @@ export function Reports() {
   };
 
   return (
-    <div className="p-6 md:p-12 bg-white min-h-full font-inter flex flex-col">
+    <div className="p-4 md:p-12 bg-white min-h-full font-inter flex flex-col pt-6">
       
       {/* HEADER DA PÁGINA */}
-      <div className="flex flex-col items-center mb-8 md:mb-12 max-w-2xl mx-auto w-full">
-        <div className="flex items-center justify-between w-full px-2 md:px-0">
+      <div className="flex flex-col items-center mb-6 md:mb-12 max-w-5xl mx-auto w-full">
+       <div className="flex items-center justify-between w-full mb-4 md:mb-2 px-0 md:px-0">
           <button 
             onClick={() => navigate('/home')} 
             className="text-gray-800 hover:opacity-70 transition-opacity outline-none flex items-center justify-center"
