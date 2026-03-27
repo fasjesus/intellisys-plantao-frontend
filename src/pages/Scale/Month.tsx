@@ -154,7 +154,7 @@ export function Month() {
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 md:relative md:border-none md:p-0 md:mt-6 md:flex md:justify-end">
         <div className="grid grid-cols-3 gap-2 md:flex md:gap-3">
           <button className="bg-[#B5071A] text-white py-3 md:px-8 md:py-2.5 rounded-xl font-bold text-[10px] md:text-xs shadow-md active:scale-95 transition-all">Relatório</button>
-          <button onClick={() => navigate('/scale/year')} className="bg-[#B5071A] text-white py-3 md:px-8 md:py-2.5 rounded-xl font-bold text-[10px] md:text-xs shadow-md active:scale-95 transition-all">Ano</button>
+          <button onClick={() => navigate('/scale/suggestion')} className="bg-[#B5071A] text-white py-3 md:px-8 md:py-2.5 rounded-xl font-bold text-[10px] md:text-xs shadow-md active:scale-95 transition-all">Sugestão</button>
           <button onClick={() => navigate('/home')} className="bg-[#1E293B] text-white py-3 md:px-8 md:py-2.5 rounded-xl font-bold text-[10px] md:text-xs shadow-md active:scale-95 transition-all">Voltar</button>
         </div>
       </div>

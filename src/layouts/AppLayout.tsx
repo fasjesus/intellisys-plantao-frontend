@@ -24,7 +24,7 @@ export function AppLayout() {
       {/* HEADER PRINCIPAL */}
       <header className="relative h-18 flex items-center justify-between px-4 md:px-10 bg-white shadow-md z-30 overflow-hidden">
         
-        {/* ESQUERDA: Menu e Logo */}
+        {/* Menu e Logo */}
         <div className="z-40 flex items-center gap-2 md:gap-4 shrink-0">
           <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 rounded-lg hover:bg-gray-100 outline-none">
             <Menu size={28} className={isSidebarOpen ? 'text-[#B5071A]' : 'text-gray-500'} />
@@ -54,7 +54,7 @@ export function AppLayout() {
         {/* SIDEBAR */}
         <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
         
-        {/* OVERLAY MOBILE: Fecha o menu ao clicar fora */}
+        {/* OVERLAY MOBILE: */}
         {isSidebarOpen && window.innerWidth < 768 && (
           <div 
             className="fixed inset-0 bg-black/40 z-20" 

@@ -132,7 +132,7 @@ export function Details() {
 
       {/* BOTÕES DE AÇÃO */}
       <div className="flex flex-col md:px-32 md:flex-row justify-end gap-3 mt-8 md:mt-12">
-        <button className="w-full md:w-auto bg-[#B5071A] text-white px-12 py-3 md:py-2.5 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-all">Editar</button>
+        <button onClick={() => navigate(`/users/edit/${user.id}`)} className="w-full md:w-auto bg-[#B5071A] text-white px-12 py-3 md:py-2.5 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-all">Editar</button>
         <button className="w-full md:w-auto bg-[#B5071A] text-white px-12 py-3 md:py-2.5 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-all">Gerar Relatório</button>
         <button onClick={() => navigate('/users')} className="w-full md:w-auto bg-[#B5071A] text-white px-12 py-3 md:py-2.5 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-all">Plantões</button>
         <button onClick={() => navigate('/users')} className="w-full md:w-auto bg-[#1E293B] text-white px-12 py-3 md:py-2.5 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-all">Voltar</button>

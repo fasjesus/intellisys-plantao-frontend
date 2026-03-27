@@ -92,22 +92,31 @@ export function Duty() {
           </div>
         </div>
 
-        {/* MOBILE CARDS */}
-        <div className="md:hidden space-y-3 pb-32">
-          {filteredPlantoes.map((p) => (
-             <div key={p.id} className="bg-gray-50 border border-gray-100 rounded-xl p-4 shadow-sm">
+        {/* MOBILE CARDS: Limitados a 2 por vez com scroll interno */}
+        <div className="md:hidden">
+        <div className="max-h-[360px] overflow-y-auto space-y-3 pb-4 pr-1 custom-scrollbar">
+            {filteredPlantoes.map((p) => (
+            <div key={p.id} className="bg-gray-50 border border-gray-100 rounded-xl p-4 shadow-sm">
                 <div className="flex justify-between items-start mb-2">
-                  <span className="text-[10px] font-bold text-gray-400">CÓD: {p.id}</span>
-                  <input type="checkbox" className="w-5 h-5 accent-[#B5071A]" />
+                <span className="text-[10px] font-bold text-gray-400">CÓD: {p.id}</span>
+                <input type="checkbox" className="w-5 h-5 accent-[#B5071A]" />
                 </div>
                 <p className="text-sm font-bold text-gray-700">{p.funcionario}</p>
                 <p className="text-[11px] text-gray-500">{p.dataInicio} até {p.dataFim}</p>
                 <div className="mt-3 flex justify-between items-center">
-                   <span className="text-[10px] font-bold uppercase text-gray-400">{p.tipo}</span>
-                   <span className="text-[10px] font-bold text-[#B5071A] uppercase">{p.status}</span>
+                <span className="text-[10px] font-bold uppercase text-gray-400">{p.tipo}</span>
+                <span className="text-[10px] font-bold text-[#B5071A] uppercase">{p.status}</span>
                 </div>
-             </div>
-          ))}
+            </div>
+            ))}
+        </div>
+        
+        {/* Indicador visual de que há mais conteúdo (opcional, mas ajuda a UX) */}
+        {filteredPlantoes.length > 2 && (
+            <div className="text-center py-2">
+            <div className="w-8 h-1 bg-gray-200 rounded-full mx-auto animate-pulse"></div>
+            </div>
+        )}
         </div>
 
         {/* TOOLBAR DE BOTÕES (AZUIS) */}
@@ -127,14 +136,8 @@ export function Duty() {
             <button className="flex items-center justify-center gap-2 bg-[#1E293B] text-white py-2.5 rounded-lg text-[10px] font-bold uppercase shadow-sm active:scale-95 transition-all">
               <Plus size={14} /> Inserir
             </button>
-            <button className="flex items-center justify-center gap-2 bg-[#1E293B] text-white py-2.5 rounded-lg text-[10px] font-bold uppercase shadow-sm active:scale-95 transition-all">
-              <XCircle size={14} /> Fechar
-            </button>
             
             {/* Segunda Linha de Ações */}
-            <button className="flex items-center justify-center gap-2 bg-[#1E293B] text-white py-2.5 rounded-lg text-[10px] font-bold uppercase shadow-sm active:scale-95 transition-all">
-               VLR Plantão
-            </button>
             <button className="flex items-center justify-center gap-2 bg-[#1E293B] text-white py-2.5 rounded-lg text-[10px] font-bold uppercase shadow-sm active:scale-95 transition-all">
               <Calendar size={14} /> Escala
             </button>
