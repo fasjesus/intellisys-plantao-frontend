@@ -19,5 +19,16 @@ export const authService = {
     localStorage.removeItem('@Intellisys:token');
     localStorage.removeItem('@Intellisys:user');
     delete api.defaults.headers.Authorization;
+  },
+
+  getUsuario: async () => {
+    const response = await api.get('/authenticated/usuarios');
+    return response.data; // Deve retornar algo como { id: 1, colaboradorId: 10, ... }
+  },
+
+  // 2. Busca os dados do colaborador usando o ID vinculado ao usuário
+  getColaborador: async (colaboradorId: string) => {
+    const response = await api.get(`/colaboradores/${colaboradorId}`);
+    return response.data; // Deve retornar { nome: "Flávia Santos", ... }
   }
 };

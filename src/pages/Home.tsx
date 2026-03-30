@@ -1,14 +1,45 @@
-import { useState, cloneElement } from 'react';
+import { useState, cloneElement, useEffect } from 'react';
 import { Calendar, Users, Clock, CalendarDays, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { SearchBar } from '../components/SearchBar';
 import { UserAvatar } from '../components/UserAvatar';
 import { ToolCard } from '../components/ToolCard';
 import logo from '../assets/images/logo.png';
+import { authService } from '../services/authService'; // Importando o serviço
 
 export function Home() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [userName, setUserName] = useState('USUÁRIO');
   const navigate = useNavigate();
+
+  // Efeito para carregar o nome do usuário salvo no login
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const usuario = await authService.getUsuario();
+        
+        const colabId = usuario.id_colaborador;
+
+        if (colabId) {
+          const colaborador = await authService.getColaborador(colabId);
+          
+          setUserName(colaborador.nome);
+          
+          localStorage.setItem('@Intellisys:colaborador', JSON.stringify(colaborador));
+        }
+      } catch (error) {
+        console.error("Erro no fluxo de busca de nome:", error);
+      }
+    }
+
+    loadData();
+  }, []);
+
+  const handleLogout = () => {
+    authService.logout(); // Limpa tokens e localStorage
+    navigate('/');
+  };
 
   const handleGlobalSearch = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -40,8 +71,8 @@ export function Home() {
             <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
           </form>
           <div className="flex items-center gap-8 text-white">
-            <UserAvatar name="USUÁRIO" />
-            <button onClick={() => navigate('/')} className="hover:opacity-80 transition-opacity outline-none">
+            <UserAvatar name={userName} />
+            <button onClick={handleLogout} className="hover:opacity-80 transition-opacity outline-none">
               <LogOut size={26} />
             </button>
           </div>
@@ -49,34 +80,33 @@ export function Home() {
 
         {/* Diagonal Mobile */}
         <div className="absolute right-0 top-0 h-full w-[40%] bg-[#B5071A] diagonal-bg flex md:hidden items-center justify-end px-4 gap-4">
-          <UserAvatar name="" />
-          <button onClick={() => navigate('/')} className="text-white active:opacity-50 transition-opacity">
+          <UserAvatar name={userName.split(' ')[0]} /> {/* Mostra apenas primeiro nome no mobile */}
+          <button onClick={handleLogout} className="text-white active:opacity-50 transition-opacity">
             <LogOut size={22} />
           </button>
         </div>
       </header>
 
-      {/* MAIN: Ajustado o padding-top (pt) e o gap para mobile */}
+      {/* MAIN */}
       <main className="flex-grow flex flex-col items-center pt-6 md:pt-24 px-6 gap-4 md:gap-12">  
 
-        {/* Bloco de Texto Superior: Margem negativa ou reduzida para aproximar da busca */}
         <div className="text-center mb-2 md:mb-0">
           <h2 className="text-xl md:text-3xl font-medium text-gray-800">
-            Acesse as <span className="text-[#B5071A] font-bold">Ferramentas</span>
+            Olá, <span className="text-[#B5071A] font-bold">{userName.split(' ')[0]}</span>
           </h2>
           <p className="text-gray-500 text-xs md:text-base leading-relaxed">
             Gerencie aqui sua equipe de plantões.
           </p>
         </div>
 
-        {/* BUSCA MOBILE: Espaçamento reduzido */}
+        {/* BUSCA MOBILE */}
         <div className="w-full max-w-md md:hidden mb-4">
           <form onSubmit={handleGlobalSearch}>
             <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
           </form>
         </div>
 
-        {/* GRID DE FERRAMENTAS: Mobile (Estilo SearchBar) / Desktop (Cards) */}
+        {/* GRID DE FERRAMENTAS */}
         <div className="flex flex-col md:grid md:grid-cols-4 gap-3 md:gap-8 w-full max-w-4xl pb-8">
           
           {[
@@ -99,7 +129,6 @@ export function Home() {
                 gap-3 md:gap-2 group
               "
             >
-              {/* Ícone: No desktop usa o ToolCard, no mobile o ícone puro */}
               <div className="text-white md:text-gray-600 group-hover:text-[#B5071A] transition-colors shrink-0">
                 <div className="hidden md:block">
                   <ToolCard label={item.label} icon={cloneElement(item.icon as React.ReactElement, { size: 36 })} />
@@ -109,8 +138,7 @@ export function Home() {
                 </div>
               </div>
 
-              {/* Texto: Mesma fonte e alinhamento do placeholder da busca */}
-              <span className="md:hidden text-white text-xs uppercase tracking-wider">
+              <span className="md:hidden text-white text-xs uppercase tracking-wider font-bold">
                 {item.label}
               </span>
             </button>
