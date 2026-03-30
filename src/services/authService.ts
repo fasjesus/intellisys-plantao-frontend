@@ -6,9 +6,8 @@ export const authService = {
     
     if (response.data.token) {
       localStorage.setItem('@Intellisys:token', response.data.token);
-      localStorage.setItem('@Intellisys:user', JSON.stringify(response.data.usuario));
+      localStorage.setItem('@Intellisys:user', JSON.stringify(response.data.usuario || response.data));
       
-      // Configura o token para as próximas chamadas automaticamente
       api.defaults.headers.Authorization = `Bearer ${response.data.token}`;
     }
     
@@ -18,17 +17,21 @@ export const authService = {
   logout: () => {
     localStorage.removeItem('@Intellisys:token');
     localStorage.removeItem('@Intellisys:user');
+    localStorage.removeItem('@Intellisys:colaborador'); // Limpa também o colaborador
     delete api.defaults.headers.Authorization;
   },
 
   getUsuario: async () => {
     const response = await api.get('/authenticated/usuarios');
-    return response.data; // Deve retornar algo como { id: 1, colaboradorId: 10, ... }
+    // Atualiza o user no storage com dados frescos do servidor
+    localStorage.setItem('@Intellisys:user', JSON.stringify(response.data));
+    return response.data;
   },
 
-  // 2. Busca os dados do colaborador usando o ID vinculado ao usuário
   getColaborador: async (colaboradorId: string) => {
     const response = await api.get(`/colaboradores/${colaboradorId}`);
-    return response.data; // Deve retornar { nome: "Flávia Santos", ... }
+    // Salva o colaborador para que o Header e o All.tsx possam usar
+    localStorage.setItem('@Intellisys:colaborador', JSON.stringify(response.data));
+    return response.data;
   }
 };
