@@ -150,37 +150,37 @@ export function All() {
 
             {/* LISTA DE COLABORADORES COM SCROLL */}
             <div className="max-h-[45vh] md:max-h-[380px] overflow-y-auto pr-2 custom-scrollbar space-y-3 md:space-y-4">
-              {filteredCollaborators.map((user) => (
+              {filteredCollaborators.map((collaborator) => (
                 <div 
-                  key={user.id}
-                  onClick={() => navigate(`/users/details/${user.id}`)}
+                  key={collaborator.id}
+                  onClick={() => navigate(`/users/details/${collaborator.id}`)}
                   className="flex flex-col md:grid md:grid-cols-[60px_1fr_2fr_1fr_1fr_60px] gap-3 md:gap-4 items-start md:items-center bg-white border border-gray-100 rounded-xl p-4 md:p-5 shadow-sm hover:border-[#B5071A]/50 transition-all cursor-pointer group"
                 >
                   <div className="flex w-full md:w-auto justify-between items-center md:justify-center border-b md:border-none pb-2 md:pb-0 mb-2 md:mb-0">
                     <input type="checkbox" className="w-5 h-5 accent-[#B5071A]" onClick={(e) => e.stopPropagation()} />
-                    <span className={`md:hidden text-[10px] font-bold px-2 py-1 rounded uppercase ${user.status === 'ativo' ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-600'}`}>
-                      {user.displayStatus}
+                    <span className={`md:hidden text-[10px] font-bold px-2 py-1 rounded uppercase ${collaborator.status === 'ativo' ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-600'}`}>
+                      {collaborator.displayStatus}
                     </span>
                   </div>
 
                   <div className="flex flex-col md:block overflow-hidden">
                     <span className="md:hidden text-[9px] text-gray-400 font-bold uppercase">Email</span>
-                    <div className="text-sm md:text-center md:text-xs font-bold text-gray-700 truncate">{user.email}</div>
+                    <div className="text-sm md:text-center md:text-xs font-bold text-gray-700 truncate">{collaborator.email}</div>
                   </div>
 
                   <div className="flex flex-col md:block overflow-hidden">
                     <span className="md:hidden text-[9px] text-gray-400 font-bold uppercase">Nome</span>
-                    <div className="text-sm md:text-center md:text-xs font-bold text-gray-700 uppercase truncate w-full">{user.nome}</div>
+                    <div className="text-sm md:text-center md:text-xs font-bold text-gray-700 uppercase truncate w-full">{collaborator.nome}</div>
                   </div>
 
                   <div className="flex flex-col md:block">
                     <span className="md:hidden text-[9px] text-gray-400 font-bold uppercase">Código</span>
-                    <div className="text-sm md:text-center md:text-xs font-bold text-gray-500">{user.displayCode}</div>
+                    <div className="text-sm md:text-center md:text-xs font-bold text-gray-500">{collaborator.displayCode}</div>
                   </div>
 
                   <div className="hidden md:block text-center text-xs font-bold text-gray-700 uppercase">
-                    <span className={user.status === 'ativo' ? 'text-green-600' : 'text-gray-400'}>
-                      {user.displayStatus}
+                    <span className={collaborator.status === 'ativo' ? 'text-green-600' : 'text-gray-400'}>
+                      {collaborator.displayStatus}
                     </span>
                   </div>
 
