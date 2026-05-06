@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import logo from '../assets/images/logo.png';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { authService } from '../services/authService';
+import { AppHeader } from '../components/AppHeader';
+import { AppFooter } from '../components/AppFooter';
 
 export function Login() {
   const navigate = useNavigate();
@@ -45,16 +46,7 @@ export function Login() {
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-white">
-      {/* HEADER DA INTELLISYS */}
-      <header className="relative h-18 md:h-20 flex items-center justify-between px-6 md:px-10 bg-white shadow-md z-30">
-        <div className="z-10 shrink-0">
-          <img src={logo} alt="Intellisys" className="h-6 md:h-8 w-auto object-contain" />
-        </div>
-        
-        {/* Faixas Diagonais Visuais */}
-        <div className="absolute right-0 top-0 h-full w-[78%] bg-[#B5071A] diagonal-bg hidden md:block"></div>
-        <div className="absolute right-0 top-0 h-full w-[40%] bg-[#B5071A] diagonal-bg flex md:hidden items-center justify-end px-4 gap-4"></div>
-      </header>
+      <AppHeader />
 
       <main className="flex-grow flex flex-col items-center justify-center px-6 py-10">
         {/* TÍTULO E BOAS-VINDAS */}
@@ -122,10 +114,7 @@ export function Login() {
         </div>
       </main>
 
-      {/* FOOTER INTELLISYS */}
-      <footer className="bg-[#545454] text-white py-6 text-center text-[10px] md:text-sm tracking-wide px-4">
-        Intellisys Informática Ltda / Todos os direitos reservados (c) 2026
-      </footer>
+      <AppFooter />
     </div>
   );
 }

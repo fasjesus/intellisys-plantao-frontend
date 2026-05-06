@@ -9,6 +9,7 @@ import { Details } from './pages/Users/Details';
 import { Reports } from './pages/Reports';
 import { Duty } from './pages/Duty';
 import { Edit } from './pages/Users/Edit';
+import { Create } from './pages/Users/Create';
 
 export function App() {
   return (
@@ -24,6 +25,7 @@ export function App() {
         <Route path="/users" element={<UsersAll />} />
         <Route path="/users/details/:id" element={<Details />} />
         <Route path="/users/edit/:id" element={<Edit />} />
+        <Route path="/users/create" element={<Create />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/duty" element={<Duty />} />
       </Route>

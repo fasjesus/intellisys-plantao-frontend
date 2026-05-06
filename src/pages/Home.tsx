@@ -1,31 +1,29 @@
 import { useState, cloneElement, useEffect } from 'react';
-import { Calendar, Users, Clock, CalendarDays, LogOut } from 'lucide-react';
+import { Calendar, Users, Clock, CalendarDays } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { SearchBar } from '../components/SearchBar';
-import { UserAvatar } from '../components/UserAvatar';
 import { ToolCard } from '../components/ToolCard';
-import logo from '../assets/images/logo.png';
-import { authService } from '../services/authService'; // Importando o serviço
+import { AppFooter } from '../components/AppFooter';
+import { AppHeader } from '../components/AppHeader';
+import { authService } from '../services/authService';
 
 export function Home() {
   const [searchTerm, setSearchTerm] = useState('');
   const [userName, setUserName] = useState('USUÁRIO');
+  const [userPhoto, setUserPhoto] = useState<string | undefined>();
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
-
-  // Efeito para carregar o nome do usuário salvo no login
 
   useEffect(() => {
     async function loadData() {
       try {
         const usuario = await authService.getUsuario();
-        
+        setIsAdmin(usuario.role === 'admin');
         const colabId = usuario.id_colaborador;
-
         if (colabId) {
           const colaborador = await authService.getColaborador(colabId);
-          
           setUserName(colaborador.nome);
-          
+          setUserPhoto(colaborador.foto_url || undefined);
           localStorage.setItem('@Intellisys:colaborador', JSON.stringify(colaborador));
         }
       } catch (error) {
@@ -59,33 +57,14 @@ export function Home() {
 
   return (
     <div className="min-h-screen flex flex-col font-inter bg-white overflow-x-hidden">
-      {/* HEADER */}
-      <header className="relative h-18 md:h-20 flex items-center justify-between px-6 md:px-10 bg-white shadow-md z-30">
-        <div className="z-10 shrink-0">
-          <img src={logo} alt="Intellisys" className="h-6 md:h-8 w-auto object-contain" />
-        </div>
-
-        {/* Diagonal Desktop */}
-        <div className="absolute right-0 top-0 h-full w-[78%] bg-[#B5071A] diagonal-bg hidden md:flex items-center justify-end px-16 gap-12">
-          <form onSubmit={handleGlobalSearch} className="flex-grow max-w-sm">
-            <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
-          </form>
-          <div className="flex items-center gap-8 text-white">
-            <UserAvatar name={userName} />
-            <button onClick={handleLogout} className="hover:opacity-80 transition-opacity outline-none">
-              <LogOut size={26} />
-            </button>
-          </div>
-        </div>
-
-        {/* Diagonal Mobile */}
-        <div className="absolute right-0 top-0 h-full w-[40%] bg-[#B5071A] diagonal-bg flex md:hidden items-center justify-end px-4 gap-4">
-          <UserAvatar name={userName.split(' ')[0]} /> {/* Mostra apenas primeiro nome no mobile */}
-          <button onClick={handleLogout} className="text-white active:opacity-50 transition-opacity">
-            <LogOut size={22} />
-          </button>
-        </div>
-      </header>
+      <AppHeader
+        userName={userName}
+        userPhoto={userPhoto}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        onSearch={handleGlobalSearch}
+        onLogout={handleLogout}
+      />
 
       {/* MAIN */}
       <main className="flex-grow flex flex-col items-center pt-6 md:pt-24 px-6 gap-4 md:gap-12">  
@@ -106,49 +85,54 @@ export function Home() {
           </form>
         </div>
 
-        {/* GRID DE FERRAMENTAS */}
-        <div className="flex flex-col md:grid md:grid-cols-4 gap-3 md:gap-8 w-full max-w-4xl pb-8">
-          
+        {/* GRID DE FERRAMENTAS - apenas admin */}
+        {isAdmin && (
+        <div className="flex flex-col md:flex-row md:justify-center gap-3 md:gap-4 w-full max-w-3xl mt-10 pb-8">
+
           {[
             { label: "Escala", icon: <Calendar size={20} />, path: '/scale/month' },
             { label: "Plantões", icon: <Clock size={20} />, path: '/duty' },
             { label: "Colaboradores", icon: <Users size={20} />, path: '/users' },
             { label: "Relatórios", icon: <CalendarDays size={20} />, path: '/reports' },
           ].map((item) => (
-            <button 
-              key={item.label}
-              onClick={() => navigate(item.path)}
-              className="
-                w-full md:w-auto transition-all active:scale-[0.98]
-                flex items-center md:flex-col justify-center md:justify-center 
-                bg-[#B5071A]  md:bg-transparent 
-                border border-gray-200 md:border-none 
-                h-12 md:h-auto px-4 md:px-0 
-                rounded-2xl md:rounded-none 
-                shadow-sm md:shadow-none 
-                gap-3 md:gap-2 group
-              "
-            >
-              <div className="text-white md:text-gray-600 group-hover:text-[#B5071A] transition-colors shrink-0">
-                <div className="hidden md:block">
-                  <ToolCard label={item.label} icon={cloneElement(item.icon as React.ReactElement, { size: 36 })} />
-                </div>
-                <div className="md:hidden flex items-center justify-center">
-                  {item.icon}
-                </div>
+            <div key={item.label} className="md:w-48">
+              {/* Desktop: ToolCard já é um button com onClick */}
+              <div className="hidden md:block">
+                <ToolCard
+                  label={item.label}
+                  icon={cloneElement(item.icon as React.ReactElement<{ size: number }>, { size: 42 })}
+                  onClick={() => navigate(item.path)}
+                />
               </div>
 
-              <span className="md:hidden text-white text-xs uppercase tracking-wider font-bold">
-                {item.label}
-              </span>
-            </button>
+              {/* Mobile: button simples */}
+              <button
+                onClick={() => navigate(item.path)}
+                className="
+                  md:hidden w-full transition-all active:scale-[0.98]
+                  flex items-center
+                  bg-[#B5071A]
+                  border border-gray-200
+                  h-12 px-4
+                  rounded-2xl
+                  shadow-sm
+                  gap-3 group
+                "
+              >
+                <div className="text-white shrink-0">
+                  {item.icon}
+                </div>
+                <span className="text-white text-xs uppercase tracking-wider font-bold">
+                  {item.label}
+                </span>
+              </button>
+            </div>
           ))}
         </div>
+        )}
       </main>
 
-      <footer className="bg-[#545454] text-white py-4 md:py-6 text-center text-[10px] md:text-sm px-4 shrink-0">
-        Intellisys Informática Ltda / Todos os direitos reservados (c) 2026
-      </footer>
+      <AppFooter />
     </div>
   );
 }

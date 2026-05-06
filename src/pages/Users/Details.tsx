@@ -1,10 +1,20 @@
 import { useState, useEffect } from 'react';
-import { 
-  ArrowLeft, Mail, Phone, Calendar, ShieldCheck, 
-  UserCircle, Briefcase, Loader2, AlertCircle 
+import {
+  Mail, Phone, Calendar, ShieldCheck,
+  UserCircle, Briefcase, Loader2, AlertCircle
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { collaboratorService, type Collaborator } from '../../services/collaboratorService';
+import { Button } from '../../components/Button';
+
+function formatPhone(value: string): string {
+  const digits = value.replace(/\D/g, '');
+  if (digits.length === 11)
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  if (digits.length === 10)
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  return value;
+}
 
 export function Details() {
   const navigate = useNavigate();
@@ -47,7 +57,7 @@ export function Details() {
         <AlertCircle size={48} className="text-gray-300" />
         <h2 className="text-gray-600 font-bold">Colaborador não encontrado</h2>
         <p className="text-gray-400 text-sm">Não foi possível carregar as informações deste registro.</p>
-        <button onClick={() => navigate('/users')} className="bg-[#B5071A] text-white px-8 py-2 rounded-xl text-sm font-bold">Voltar para Lista</button>
+        <button onClick={() => navigate('/users')} className="bg-[#B5071A] hover:bg-[#9a0615] text-white px-8 py-2 rounded-xl text-sm font-bold transition-all">Voltar para Lista</button>
       </div>
     );
   }
@@ -56,15 +66,11 @@ export function Details() {
     <div className="p-4 md:p-8 bg-white min-h-full font-inter pt-6">
       {/* HEADER PRINCIPAL */}
       <div className="flex flex-col items-center mb-6 md:mb-8 max-w-5xl mx-auto w-full md:pt-6">
-        <div className="flex items-center justify-between w-full mb-4 md:mb-2">
-          <button onClick={() => navigate('/users')} className="text-gray-800 hover:opacity-70 outline-none transition-opacity">
-            <ArrowLeft size={window.innerWidth < 768 ? 24 : 32} />
-          </button>
+        <div className="flex items-center justify-center w-full mb-4 md:mb-2">
           <div className="text-center">
             <h2 className="text-xl md:text-2xl font-bold text-[#B5071A]">Detalhes do Colaborador</h2>
             <p className="text-[12px] md:text-sm text-gray-500 font-medium">Veja aqui as informações detalhadas.</p>
           </div>
-          <div className="w-8"></div>
         </div> 
       </div>      
 
@@ -85,11 +91,11 @@ export function Details() {
           <div className="flex flex-row-reverse gap-6 items-center justify-between">
             {/* FOTO (DIREITA) */}
             <div className="flex-shrink-0 w-24 h-28 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-center overflow-hidden shadow-inner">
-              {/*{user.foto_url ? (
+              {user.foto_url ? (
                 <img src={user.foto_url} alt={user.nome} className="w-full h-full object-cover" />
               ) : (
                 <UserCircle size={70} strokeWidth={1} className="text-gray-200" />
-              )} */}
+              )}
             </div>
 
             {/* DADOS (ESQUERDA) */}
@@ -106,7 +112,7 @@ export function Details() {
                 </div>
                 <div>
                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Status Plantão</p>
-                  <p className={`text-xs font-bold ${user.ativo_plantao === 'ativo' ? 'text-blue-500' : 'text-gray-400'}`}>
+                  <p className={`text-xs font-bold ${user.ativo_plantao === 'ativo' ? 'text-green-500' : 'text-gray-400'}`}>
                     {user.ativo_plantao === 'ativo' ? 'Disponível' : 'Indisponível'}
                   </p>
                 </div>
@@ -122,17 +128,15 @@ export function Details() {
           </h3>
           <div className="space-y-5">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-red-50 rounded-lg"><Mail size={16} className="text-[#B5071A]" /></div>
               <div>
                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">E-mail Corporativo</p>
                 <p className="text-[13px] font-bold text-gray-600">{user.email}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-red-50 rounded-lg"><Phone size={16} className="text-[#B5071A]" /></div>
               <div>
                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Telefone / Celular</p>
-                <p className="text-[13px] font-bold text-gray-600">{user.telefone}</p>
+                <p className="text-[13px] font-bold text-gray-600">{user.telefone ? formatPhone(user.telefone) : <span className="text-gray-300 font-normal italic">Não informado</span>}</p>
               </div>
             </div>
           </div>
@@ -154,7 +158,7 @@ export function Details() {
             </div>
             <div className="border-l-2 border-gray-100 pl-4">
               <p className="text-[10px] text-gray-400 font-bold uppercase flex items-center gap-1.5">
-                <Calendar size={14} className="text-gray-300" /> Data de Admissão
+                Data de Admissão
               </p>
               <p className="text-sm font-bold text-gray-700">{user.data_admissao}</p>
             </div>
@@ -164,15 +168,9 @@ export function Details() {
 
       {/* BOTÕES DE AÇÃO */}
       <div className="flex flex-col md:flex-row justify-end gap-3 mt-8 md:mt-12 max-w-5xl mx-auto">
-        <button onClick={() => navigate(`/users/edit/${user.id}`)} className="w-full md:w-auto bg-[#B5071A] text-white px-10 py-3 rounded-xl font-bold text-xs uppercase tracking-widest shadow-md active:scale-95 transition-all">
-          Editar Registro
-        </button>
-        <button className="w-full md:w-auto bg-[#B5071A] text-white px-10 py-3 rounded-xl font-bold text-xs uppercase tracking-widest shadow-md active:scale-95 transition-all">
-          Histórico de Plantões
-        </button>
-        <button onClick={() => navigate('/users')} className="w-full md:w-auto bg-[#1E293B] text-white px-10 py-3 rounded-xl font-bold text-xs uppercase tracking-widest shadow-md active:scale-95 transition-all">
-          Voltar para Lista
-        </button>
+        <Button label="Editar Registro" fullWidthMobile onClick={() => navigate(`/users/edit/${user.id}`)} />
+        <Button label="Histórico de Plantões" fullWidthMobile />
+        <Button label="Voltar para Lista" variant="secondary" fullWidthMobile onClick={() => navigate('/users')} />
       </div>
     </div>
   );

@@ -1,9 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, Check, X, RefreshCw, Edit3, 
-  CalendarCheck, User, LayoutGrid
-} from 'lucide-react';
+import { Check, RefreshCw, Edit3, CalendarCheck } from 'lucide-react';
 
 interface Suggestion {
   day: number;
@@ -15,8 +11,6 @@ interface Suggestion {
 }
 
 export function Suggestion() {
-  const navigate = useNavigate();
-  
   // Lista de funcionários para o rodízio semanal
   const staff = ["Afonso Jimenez", "Ezequiel Oliveira", "Flávia Santos", "Rannyery Silva"];
   const daysOfWeek = ["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"];
@@ -60,17 +54,13 @@ export function Suggestion() {
       
       {/* HEADER */}
       <div className="flex flex-col items-center mb-4 md:mb-6 max-w-6xl mx-auto w-full">
-        <div className="flex items-center justify-between w-full mb-4 px-2">
-          <button onClick={() => navigate(-1)} className="text-gray-800 outline-none">
-            <ArrowLeft size={window.innerWidth < 768 ? 24 : 32} />
-          </button>
+        <div className="flex items-center justify-center w-full mb-4">
           <div className="text-center">
             <h2 className="text-xl md:text-2xl font-bold text-[#B5071A]">Sugestão: Abril 2026</h2>
             <p className="text-[10px] md:text-sm text-gray-500 font-bold uppercase tracking-widest text-center">
               Rodízio Semanal de Colaboradores
             </p>
           </div>
-          <div className="w-8 md:w-10"></div>
         </div>
 
         <div className="w-full bg-blue-50 border border-blue-100 p-3 rounded-xl flex items-center gap-3">

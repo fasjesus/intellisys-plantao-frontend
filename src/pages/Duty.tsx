@@ -1,17 +1,16 @@
+import { useState, useEffect } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
-import { 
-  ArrowLeft, CheckCircle2, AlertCircle, User, 
-  Info, DollarSign, Edit, Plus, XCircle, Calendar, FileText 
+import {
+  AlertCircle,
+  Info, DollarSign, Edit, Plus, Calendar, FileText,
+  Loader2
 } from 'lucide-react';
 import { SearchBar } from '../components/SearchBar';
+import { dutyService, type Duty } from '../services/dutyService';
+import { collaboratorService } from '../services/collaboratorService';
 
-interface Duty {
-  id: string;
+interface DutyWithNome extends Duty {
   funcionario: string;
-  dataInicio: string;
-  dataFim: string;
-  tipo: string;
-  status: 'Aberto' | 'Pago';
 }
 
 export function Duty() {
@@ -21,32 +20,85 @@ export function Duty() {
     setSearchTerm: (v: string) => void;
   }>();
 
-  const plantoes: Duty[] = [
-    { id: '607', funcionario: 'Rannyery Santos Lima', dataInicio: '28/02/2026', dataFim: '06/03/2026', tipo: 'Externo', status: 'Aberto' },
-    { id: '606', funcionario: 'Reyges Luiz Santos Lima', dataInicio: '21/02/2026', dataFim: '27/02/2026', tipo: 'Externo', status: 'Aberto' },
-    { id: '605', funcionario: 'Rannyery Santos Lima', dataInicio: '28/02/2026', dataFim: '06/03/2026', tipo: 'Externo', status: 'Aberto' },
-    { id: '604', funcionario: 'Reyges Luiz Santos Lima', dataInicio: '21/02/2026', dataFim: '27/02/2026', tipo: 'Externo', status: 'Aberto' },
-  ];
+  const [plantoes, setPlantoes] = useState<DutyWithNome[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  const filteredPlantoes = plantoes.filter(p => 
-    p.funcionario.toLowerCase().includes(searchTerm.toLowerCase()) || p.id.includes(searchTerm)
+  useEffect(() => {
+    async function loadPlantoes() {
+      try {
+        setLoading(true);
+        const data = await dutyService.getAll();
+
+        const colaboradoresCache: Record<string, string> = {};
+        const withNomes = await Promise.all(
+          data.map(async (p) => {
+            if (!colaboradoresCache[p.colaborador_id]) {
+              try {
+                const colab = await collaboratorService.getById(p.colaborador_id);
+                colaboradoresCache[p.colaborador_id] = colab.nome;
+              } catch {
+                colaboradoresCache[p.colaborador_id] = p.colaborador_id;
+              }
+            }
+            return { ...p, funcionario: colaboradoresCache[p.colaborador_id] };
+          })
+        );
+
+        setPlantoes(withNomes);
+      } catch {
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadPlantoes();
+  }, []);
+
+  const formatDate = (iso: string) =>
+    new Date(iso).toLocaleDateString('pt-BR');
+
+  const statusLabel: Record<string, string> = {
+    PENDENTE: 'Aberto',
+    APROVADO: 'Pago',
+    RECUSADO: 'Recusado',
+  };
+
+  const filtered = plantoes.filter(p =>
+    p.funcionario.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.id.includes(searchTerm)
   );
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <Loader2 size={40} className="text-[#B5071A] animate-spin" />
+        <p className="text-gray-400 font-bold text-xs uppercase tracking-widest">Carregando plantões...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <AlertCircle size={48} className="text-gray-300" />
+        <p className="text-gray-500 font-bold text-sm">Erro ao carregar plantões.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-12 bg-white min-h-full font-inter flex flex-col">
-      
+
       {/* HEADER DA PÁGINA */}
       <div className="flex flex-col items-center mb-6 md:mb-8 max-w-7xl mx-auto w-full">
-        <div className="flex items-center justify-between w-full mb-4 md:mb-2 px-2 md:px-0">
-          <button onClick={() => navigate('/home')} className="text-gray-800 hover:opacity-70 outline-none flex items-center justify-center shrink-0">
-            <ArrowLeft size={window.innerWidth < 768 ? 24 : 32} />
-          </button>
-          
-          <div className="text-center flex-grow">
+        <div className="flex items-center justify-center w-full mb-4 md:mb-2">
+          <div className="text-center">
             <h2 className="text-xl md:text-2xl font-bold text-[#B5071A]">Gerenciamento de Plantões</h2>
             <p className="text-[10px] md:text-sm text-gray-500 font-medium">Administre as escalas e pagamentos da equipe.</p>
           </div>
-          
+
           <div className="w-8 md:w-10 shrink-0"></div>
         </div>
 
@@ -56,74 +108,88 @@ export function Duty() {
       </div>
 
       <div className="max-w-7xl mx-auto w-full flex-grow flex flex-col">
-        
+
         {/* TABELA DESKTOP */}
         <div className="hidden md:block border border-gray-100 rounded-xl overflow-hidden shadow-sm bg-white mb-6">
           <div className="grid grid-cols-[80px_1fr_1fr_1fr_1fr_120px] bg-gray-50 border-b border-gray-100 px-6 py-4">
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest"> </span>
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Código</span>
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Início / Fim</span>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tipo</span>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</span>
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Funcionário</span>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Status</span>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Valor</span>
           </div>
-          
+
           <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
-            {filteredPlantoes.map((p) => (
-              <div key={p.id} className="grid grid-cols-[80px_1fr_1fr_1fr_1fr_120px] px-6 py-4 border-b border-gray-50 items-center hover:bg-gray-50 transition-colors cursor-pointer group">
+            {filtered.length === 0 ? (
+              <p className="text-center text-gray-400 text-sm py-10">Nenhum plantão encontrado.</p>
+            ) : filtered.map((p) => (
+              <div key={p.id} className="grid grid-cols-[80px_1fr_1fr_1fr_1fr_120px] px-6 py-4 border-b border-gray-50 items-center hover:bg-gray-50 transition-colors cursor-pointer">
                 <div className="flex justify-start">
-                   <input type="checkbox" className="w-4 h-4 accent-[#B5071A]" />
-                </div>                
-                <span className="text-sm font-bold text-gray-400">{p.id}</span>
-                <div className="flex flex-col">
-                  <span className="text-xs font-bold text-gray-700">{p.dataInicio}</span>
-                  <span className="text-[10px] text-gray-400">{p.dataFim}</span>
+                  <input type="checkbox" className="w-4 h-4 accent-[#B5071A]" />
                 </div>
-                <span className="text-xs font-medium text-gray-600">{p.tipo}</span>
+                <span className="text-sm font-bold text-gray-400">{p.id.split('-')[0].toUpperCase()}</span>
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold text-gray-700">{formatDate(p.periodo.inicio)}</span>
+                  <span className="text-[10px] text-gray-400">{formatDate(p.periodo.fim)}</span>
+                </div>
+                <span className={`text-xs font-bold px-2 py-1 rounded-full w-fit ${
+                  p.status === 'APROVADO' ? 'text-green-600 bg-green-50' :
+                  p.status === 'RECUSADO' ? 'text-red-600 bg-red-50' :
+                  'text-orange-600 bg-orange-50'
+                }`}>
+                  {statusLabel[p.status] ?? p.status}
+                </span>
                 <span className="text-xs font-bold text-gray-700">{p.funcionario}</span>
                 <div className="flex justify-center">
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${p.status === 'Pago' ? 'text-green-600 bg-green-50' : 'text-orange-600 bg-orange-50'}`}>
-                    {p.status}
+                  <span className="text-xs font-bold text-gray-600">
+                    {p.valor_total != null ? `R$ ${p.valor_total.toFixed(2)}` : '—'}
                   </span>
                 </div>
-
               </div>
             ))}
           </div>
         </div>
 
-        {/* MOBILE CARDS: Limitados a 2 por vez com scroll interno */}
+        {/* MOBILE CARDS */}
         <div className="md:hidden">
-        <div className="max-h-[360px] overflow-y-auto space-y-3 pb-4 pr-1 custom-scrollbar">
-            {filteredPlantoes.map((p) => (
-            <div key={p.id} className="bg-gray-50 border border-gray-100 rounded-xl p-4 shadow-sm">
+          <div className="max-h-[360px] overflow-y-auto space-y-3 pb-4 pr-1 custom-scrollbar">
+            {filtered.length === 0 ? (
+              <p className="text-center text-gray-400 text-sm py-10">Nenhum plantão encontrado.</p>
+            ) : filtered.map((p) => (
+              <div key={p.id} className="bg-gray-50 border border-gray-100 rounded-xl p-4 shadow-sm">
                 <div className="flex justify-between items-start mb-2">
-                <span className="text-[10px] font-bold text-gray-400">CÓD: {p.id}</span>
-                <input type="checkbox" className="w-5 h-5 accent-[#B5071A]" />
+                  <span className="text-[10px] font-bold text-gray-400">CÓD: {p.id.split('-')[0].toUpperCase()}</span>
+                  <input type="checkbox" className="w-5 h-5 accent-[#B5071A]" />
                 </div>
                 <p className="text-sm font-bold text-gray-700">{p.funcionario}</p>
-                <p className="text-[11px] text-gray-500">{p.dataInicio} até {p.dataFim}</p>
+                <p className="text-[11px] text-gray-500">{formatDate(p.periodo.inicio)} até {formatDate(p.periodo.fim)}</p>
                 <div className="mt-3 flex justify-between items-center">
-                <span className="text-[10px] font-bold uppercase text-gray-400">{p.tipo}</span>
-                <span className="text-[10px] font-bold text-[#B5071A] uppercase">{p.status}</span>
+                  <span className="text-[10px] font-bold uppercase text-gray-400">
+                    {p.valor_total != null ? `R$ ${p.valor_total.toFixed(2)}` : '—'}
+                  </span>
+                  <span className={`text-[10px] font-bold uppercase ${
+                    p.status === 'APROVADO' ? 'text-green-600' :
+                    p.status === 'RECUSADO' ? 'text-red-600' :
+                    'text-orange-500'
+                  }`}>
+                    {statusLabel[p.status] ?? p.status}
+                  </span>
                 </div>
-            </div>
+              </div>
             ))}
-        </div>
-        
-        {/* Indicador visual de que há mais conteúdo (opcional, mas ajuda a UX) */}
-        {filteredPlantoes.length > 2 && (
+          </div>
+
+          {filtered.length > 2 && (
             <div className="text-center py-2">
-            <div className="w-8 h-1 bg-gray-200 rounded-full mx-auto animate-pulse"></div>
+              <div className="w-8 h-1 bg-gray-200 rounded-full mx-auto animate-pulse"></div>
             </div>
-        )}
+          )}
         </div>
 
-        {/* TOOLBAR DE BOTÕES (AZUIS) */}
+        {/* TOOLBAR */}
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 md:relative md:border-none md:p-0">
           <div className="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-9 gap-2">
-            
-            {/* Primeira Linha de Ações */}
             <button className="flex items-center justify-center gap-2 bg-[#1E293B] text-white py-2.5 rounded-lg text-[10px] font-bold uppercase shadow-sm active:scale-95 transition-all">
               <Info size={14} /> Detalhes
             </button>
@@ -136,8 +202,6 @@ export function Duty() {
             <button className="flex items-center justify-center gap-2 bg-[#1E293B] text-white py-2.5 rounded-lg text-[10px] font-bold uppercase shadow-sm active:scale-95 transition-all">
               <Plus size={14} /> Inserir
             </button>
-            
-            {/* Segunda Linha de Ações */}
             <button className="flex items-center justify-center gap-2 bg-[#1E293B] text-white py-2.5 rounded-lg text-[10px] font-bold uppercase shadow-sm active:scale-95 transition-all">
               <Calendar size={14} /> Escala
             </button>
@@ -145,12 +209,10 @@ export function Duty() {
               <FileText size={14} /> Relatório
             </button>
             <button onClick={() => navigate('/home')} className="flex items-center justify-center gap-2 bg-gray-400 text-white py-2.5 rounded-lg text-[10px] font-bold uppercase shadow-sm active:scale-95 transition-all">
-               Voltar
+              Voltar
             </button>
-
           </div>
         </div>
-
       </div>
 
       <style>{`

@@ -5,15 +5,10 @@ export const authService = {
     // 1. Faz o login na rota de autenticação
     const response = await api.post('/auth/login', credentials);
     
-    if (response.data.token) {
-      const token = response.data.token;
-      const userAccount = response.data.usuario || response.data;
+    if (response.data.id) {
+      const userAccount = response.data;
 
-      // 2. Salva o Token e configura o Axios imediatamente
-      localStorage.setItem('@Intellisys:token', token);
-      api.defaults.headers.Authorization = `Bearer ${token}`;
-
-      // 3. Salva a conta de Usuário 
+      // 2. Salva a conta de Usuário
       localStorage.setItem('@Intellisys:user', JSON.stringify(userAccount));
 
       if (userAccount.id_colaborador) {
@@ -30,10 +25,8 @@ export const authService = {
   },
 
   logout: () => {
-    localStorage.removeItem('@Intellisys:token');
     localStorage.removeItem('@Intellisys:user');
     localStorage.removeItem('@Intellisys:colaborador');
-    delete api.defaults.headers.Authorization;
   },
 
   getUsuario: async () => {
