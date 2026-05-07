@@ -1,10 +1,10 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Users, Clock, Calendar, FileText, ChevronRight } from 'lucide-react';
-
+import { Users, Clock, Calendar, FileText, ChevronRight, LogOut } from 'lucide-react';
 interface SidebarProps {
   isOpen: boolean;
   onToggle: () => void;
   onClose?: () => void;
+  onLogout?: () => void;
 }
 
 const menuItems = [
@@ -14,7 +14,7 @@ const menuItems = [
   { label: "Relatórios",    path: "/reports",      icon: FileText },
 ];
 
-export function Sidebar({ isOpen, onToggle, onClose }: SidebarProps) {
+export function Sidebar({ isOpen, onToggle, onClose, onLogout }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -22,6 +22,45 @@ export function Sidebar({ isOpen, onToggle, onClose }: SidebarProps) {
     navigate(path);
     if (window.innerWidth < 768 && onClose) onClose();
   };
+
+  const navItems = menuItems.map(({ label, path, icon: Icon }, index) => {
+    const isActive = location.pathname.startsWith(path);
+    return (
+      <div key={path}>
+        {index > 0 && <div className="mx-3 border-t border-gray-200" />}
+        <button
+          onClick={() => handleNavigate(path)}
+          title={!isOpen ? label : undefined}
+          className={[
+            'w-full flex items-center gap-3 px-4 py-5 text-[11px] font-bold tracking-widest',
+            'transition-all whitespace-nowrap overflow-hidden',
+            isActive
+              ? 'bg-[#B5071A] text-white'
+              : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700',
+          ].join(' ')}
+        >
+          <Icon size={18} className="shrink-0" />
+          {isOpen && <span className="uppercase truncate">{label}</span>}
+        </button>
+      </div>
+    );
+  });
+
+  const logoutButton = () => (
+    <div className="mt-auto">
+      <div className="mx-3 border-t border-gray-200" />
+{onLogout && (
+        <button
+          onClick={onLogout}
+          title="Sair do sistema"
+          className="w-full flex items-center gap-3 px-4 py-5 text-[11px] font-bold tracking-widest text-gray-500 hover:bg-red-50 hover:text-[#B5071A] transition-all whitespace-nowrap overflow-hidden"
+        >
+          <LogOut size={18} className="shrink-0" />
+          {isOpen && <span className="uppercase">Sair</span>}
+        </button>
+      )}
+    </div>
+  );
 
   return (
     <>
@@ -42,28 +81,10 @@ export function Sidebar({ isOpen, onToggle, onClose }: SidebarProps) {
             isOpen ? 'w-56' : 'w-16',
           ].join(' ')}
         >
-          <nav className="flex flex-col w-full">
-            {menuItems.map(({ label, path, icon: Icon }) => {
-              const isActive = location.pathname.startsWith(path);
-              return (
-                <button
-                  key={path}
-                  onClick={() => handleNavigate(path)}
-                  title={!isOpen ? label : undefined}
-                  className={[
-                    'flex items-center gap-3 px-4 py-6 text-[11px] font-bold tracking-widest',
-                    'border-b border-gray-50 transition-all whitespace-nowrap overflow-hidden',
-                    isActive
-                      ? 'bg-[#B5071A] text-white'
-                      : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700',
-                  ].join(' ')}
-                >
-                  <Icon size={18} className="shrink-0" />
-                  {isOpen && <span className="uppercase truncate">{label}</span>}
-                </button>
-              );
-            })}
+          <nav className="flex flex-col w-full flex-1">
+            {navItems}
           </nav>
+          {logoutButton()}
         </aside>
 
         {/* BOTÃO TOGGLE grudado na borda direita, centralizado verticalmente */}
@@ -87,27 +108,30 @@ export function Sidebar({ isOpen, onToggle, onClose }: SidebarProps) {
           isOpen ? 'w-56 translate-x-0' : 'w-56 -translate-x-full',
         ].join(' ')}
       >
-        <nav className="flex flex-col w-full pt-2">
-          {menuItems.map(({ label, path, icon: Icon }) => {
+        <nav className="flex flex-col w-full pt-2 flex-1">
+          {menuItems.map(({ label, path, icon: Icon }, index) => {
             const isActive = location.pathname.startsWith(path);
             return (
-              <button
-                key={path}
-                onClick={() => handleNavigate(path)}
-                className={[
-                  'flex items-center gap-3 px-4 py-6 text-[11px] font-bold tracking-widest',
-                  'border-b border-gray-50 transition-all',
-                  isActive
-                    ? 'bg-[#B5071A] text-white'
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700',
-                ].join(' ')}
-              >
-                <Icon size={18} className="shrink-0" />
-                <span className="uppercase truncate">{label}</span>
-              </button>
+              <div key={path}>
+                {index > 0 && <div className="mx-3 border-t border-gray-100" />}
+                <button
+                  onClick={() => handleNavigate(path)}
+                  className={[
+                    'w-full flex items-center gap-3 px-4 py-5 text-[11px] font-bold tracking-widest',
+                    'transition-all',
+                    isActive
+                      ? 'bg-[#B5071A] text-white'
+                      : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700',
+                  ].join(' ')}
+                >
+                  <Icon size={18} className="shrink-0" />
+                  <span className="uppercase truncate">{label}</span>
+                </button>
+              </div>
             );
           })}
         </nav>
+        {logoutButton()}
       </aside>
     </>
   );

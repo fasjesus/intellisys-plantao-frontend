@@ -5,6 +5,7 @@ import { SearchBar } from '../components/SearchBar';
 import { ToolCard } from '../components/ToolCard';
 import { AppFooter } from '../components/AppFooter';
 import { AppHeader } from '../components/AppHeader';
+import { motion } from 'framer-motion';
 import { authService } from '../services/authService';
 
 export function Home() {
@@ -67,7 +68,12 @@ export function Home() {
       />
 
       {/* MAIN */}
-      <main className="flex-grow flex flex-col items-center pt-6 md:pt-24 px-6 gap-4 md:gap-12">  
+      <motion.main
+        className="flex-grow flex flex-col items-center pt-6 md:pt-24 px-6 gap-4 md:gap-12"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, delay: 0.3 }}
+      >
 
         <div className="text-center mb-2 md:mb-0">
           <h2 className="text-xl md:text-3xl font-medium text-gray-800">
@@ -130,7 +136,7 @@ export function Home() {
           ))}
         </div>
         )}
-      </main>
+      </motion.main>
 
       <AppFooter />
     </div>

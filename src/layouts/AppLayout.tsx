@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom'; 
+import { motion } from 'framer-motion';
 import { Sidebar } from '../components/Sidebar';
 import { AppHeader } from '../components/AppHeader';
 import { authService } from '../services/authService';
@@ -56,7 +57,6 @@ setUserName(colaborador.nome || 'USUÁRIO');
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         onSearch={() => {}}
-        onLogout={handleLogout}
       />
 
       <div className="flex flex-1 relative overflow-hidden">
@@ -64,12 +64,17 @@ setUserName(colaborador.nome || 'USUÁRIO');
           isOpen={isSidebarOpen}
           onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
           onClose={() => setIsSidebarOpen(false)}
+          onLogout={handleLogout}
         />
 
-        <main className="flex-1 overflow-y-auto bg-white">
-           {/* Todas as telas filhas (All.tsx, Duty.tsx) filtram dados em tempo real */}
-           <Outlet context={{ searchTerm, setSearchTerm }} /> 
-        </main>
+        <motion.main
+          className="flex-1 overflow-y-auto bg-white"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.3 }}
+        >
+           <Outlet context={{ searchTerm, setSearchTerm }} />
+        </motion.main>
       </div>
     </div>
   );

@@ -32,4 +32,14 @@
     color: var(--color-intellisys-text);
     font-family: var(--font-inter);
   }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0px 9999px white inset, 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
+    box-shadow: 0 0 0px 9999px white inset, 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
+    -webkit-text-fill-color: #374151 !important;
+    caret-color: #374151;
+  }
 }

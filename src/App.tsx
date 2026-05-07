@@ -1,4 +1,5 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 import { AppLayout } from './layouts/AppLayout';
 import { Login } from './pages/Login';
 import { Home } from './pages/Home';
@@ -13,8 +14,11 @@ import { Create } from './pages/Users/Create';
 import { ModeloComunicacao } from './pages/ModeloComunicacao';
 
 export function App() {
+  const location = useLocation();
+
   return (
-    <Routes>
+    <AnimatePresence mode="wait">
+    <Routes location={location} key={location.pathname}>
       {/* Telas sem Sidebar/Header padrão */}
       <Route path="/" element={<Login />} />
       <Route path="/home" element={<Home />} />
@@ -35,5 +39,6 @@ export function App() {
       {/* Rota de erro 404 */}
       <Route path="*" element={<div className="p-10 font-bold">Página não encontrada</div>} />
     </Routes>
+    </AnimatePresence>
   );
 }

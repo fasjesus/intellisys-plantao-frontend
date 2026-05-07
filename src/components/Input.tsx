@@ -19,8 +19,8 @@ export function Input({ label, isPassword, disabled, ...props }: InputProps) {
           {...props}
           disabled={disabled}
           type={isPassword && !showPassword ? 'password' : 'text'}
-          className={`w-full p-3 bg-white rounded-lg outline-none border-none transition-all font-inter 
-            ${disabled ? 'cursor-not-allowed opacity-70' : 'focus:ring-2 focus:ring-intellisys-red'}`}
+          className={`w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 placeholder:text-gray-300 outline-none transition-all font-inter
+            ${disabled ? 'cursor-not-allowed opacity-50' : 'focus:border-[#B5071A] focus:bg-white'}`}
         />
         
         {isPassword && (
