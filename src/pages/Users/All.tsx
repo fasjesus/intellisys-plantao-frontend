@@ -1,15 +1,20 @@
 import { useState, useEffect } from 'react';
-import { Activity, Loader2 } from 'lucide-react';
+import { Activity, Loader2, UserPlus } from 'lucide-react';
 import { Button } from '../../components/Button';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { SearchBar } from '../../components/SearchBar';
 import { collaboratorService, type Collaborator } from '../../services/collaboratorService';
 import { authService } from '../../services/authService';
+import { conviteService } from '../../services/conviteService';
+import api from '../../services/api';
 
 export function All() {
   const navigate = useNavigate();
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
+  const [colabsComUsuario, setColabsComUsuario] = useState<Set<string>>(new Set());
+  const [selected, setSelected] = useState<Collaborator | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
   const { searchTerm, setSearchTerm } = useOutletContext<{
@@ -24,10 +29,20 @@ export function All() {
         const userIsAdmin = usuario?.role === 'admin';
         setIsAdmin(userIsAdmin);
         if (!userIsAdmin) return;
-        const data = await collaboratorService.getAll();
+
+        const [data, usuarios] = await Promise.all([
+          collaboratorService.getAll(),
+          api.get('/admin/all'),
+        ]);
+
+        const idsComUsuario = new Set<string>(
+          usuarios.data.map((u: any) => u.id_colaborador).filter(Boolean)
+        );
+
         setCollaborators(data);
+        setColabsComUsuario(idsComUsuario);
       } catch {
-        // erro silencioso, tabela fica vazia
+        // erro silencioso
       } finally {
         setLoading(false);
       }
@@ -39,6 +54,29 @@ export function All() {
     c.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleRowClick = (c: Collaborator) => {
+    setSelected(prev => prev?.id === c.id ? null : c);
+  };
+
+  const handleCriarUsuario = async () => {
+    if (!selected) return;
+    try {
+      setSending(true);
+      await conviteService.criar(selected.id, selected.email, selected.nome);
+      alert(`Convite enviado para ${selected.email}`);
+      setColabsComUsuario(prev => new Set(prev).add(selected.id));
+      setSelected(null);
+    } catch {
+      alert('Erro ao enviar convite. Tente novamente.');
+      // mantém o registro selecionado para o usuário poder tentar novamente
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const selectedTemUsuario = selected ? colabsComUsuario.has(selected.id) : false;
+  const canCreateUser = isAdmin && selected !== null && !selectedTemUsuario;
 
   if (!loading && !isAdmin) {
     return (
@@ -99,23 +137,30 @@ export function All() {
               <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
                 {filtered.length === 0 ? (
                   <p className="text-center text-gray-400 text-sm py-10">Nenhum colaborador encontrado.</p>
-                ) : filtered.map((c) => (
-                  <div
-                    key={c.id}
-                    onClick={() => navigate(`/users/details/${c.id}`)}
-                    className="grid grid-cols-[0.5fr_1fr_1fr_0.5fr_100px] px-6 py-4 border-b border-gray-50 items-center hover:bg-gray-50 transition-colors cursor-pointer group"
-                  >
-                    <span className="text-sm font-bold text-gray-400">{c.id.split('-')[0].toUpperCase()}</span>
-                    <span className="text-xs font-bold text-gray-700 uppercase">{c.nome}</span>
-                    <span className="text-xs font-medium text-gray-600">{c.cargo}</span>
-                    <span className="text-xs font-medium text-gray-600">{c.setor}</span>
-                    <div className="flex justify-center">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${c.status === 'ativo' ? 'text-green-600 bg-green-50' : 'text-gray-500 bg-gray-100'}`}>
-                        {c.status === 'ativo' ? 'Ativo' : 'Inativo'}
-                      </span>
+                ) : filtered.map((c) => {
+                  const isSelected = selected?.id === c.id;
+                  return (
+                    <div
+                      key={c.id}
+                      onClick={() => handleRowClick(c)}
+                      onDoubleClick={() => navigate(`/users/details/${c.id}`)}
+                      className={[
+                        'grid grid-cols-[0.5fr_1fr_1fr_0.5fr_100px] px-6 py-4 border-b border-gray-50 items-center transition-colors cursor-pointer',
+                        isSelected ? 'bg-red-50 border-l-2 border-l-[#B5071A]' : 'hover:bg-gray-50',
+                      ].join(' ')}
+                    >
+                      <span className="text-sm font-bold text-gray-400">{c.id.split('-')[0].toUpperCase()}</span>
+                      <span className="text-xs font-bold text-gray-700 uppercase">{c.nome}</span>
+                      <span className="text-xs font-medium text-gray-600">{c.cargo}</span>
+                      <span className="text-xs font-medium text-gray-600">{c.setor}</span>
+                      <div className="flex justify-center">
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${c.status === 'ativo' ? 'text-green-600 bg-green-50' : 'text-gray-500 bg-gray-100'}`}>
+                          {c.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -124,22 +169,29 @@ export function All() {
               <div className="max-h-[360px] overflow-y-auto space-y-3 pb-4 pr-1 custom-scrollbar">
                 {filtered.length === 0 ? (
                   <p className="text-center text-gray-400 text-sm py-10">Nenhum colaborador encontrado.</p>
-                ) : filtered.map((c) => (
-                  <div
-                    key={c.id}
-                    onClick={() => navigate(`/users/details/${c.id}`)}
-                    className="bg-gray-50 border border-gray-100 rounded-xl p-4 shadow-sm cursor-pointer"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="text-[10px] font-bold text-gray-400">CÓD: {c.id.split('-')[0].toUpperCase()}</span>
-                      <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${c.status === 'ativo' ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500'}`}>
-                        {c.status === 'ativo' ? 'Ativo' : 'Inativo'}
-                      </span>
+                ) : filtered.map((c) => {
+                  const isSelected = selected?.id === c.id;
+                  return (
+                    <div
+                      key={c.id}
+                      onClick={() => handleRowClick(c)}
+                      onDoubleClick={() => navigate(`/users/details/${c.id}`)}
+                      className={[
+                        'border rounded-xl p-4 shadow-sm cursor-pointer transition-all',
+                        isSelected ? 'bg-red-50 border-[#B5071A]' : 'bg-gray-50 border-gray-100',
+                      ].join(' ')}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-[10px] font-bold text-gray-400">CÓD: {c.id.split('-')[0].toUpperCase()}</span>
+                        <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${c.status === 'ativo' ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500'}`}>
+                          {c.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                        </span>
+                      </div>
+                      <p className="text-sm font-bold text-gray-700 uppercase">{c.nome}</p>
+                      <p className="text-[11px] text-gray-500">{c.cargo} — {c.setor}</p>
                     </div>
-                    <p className="text-sm font-bold text-gray-700 uppercase">{c.nome}</p>
-                    <p className="text-[11px] text-gray-500">{c.cargo} — {c.setor}</p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {filtered.length > 2 && (
@@ -154,7 +206,22 @@ export function All() {
         {/* BOTÕES DE AÇÃO */}
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 md:relative md:border-none md:p-0 md:mt-6">
           <div className="max-w-7xl mx-auto flex justify-end gap-2 md:gap-3">
-            <Button label="Incluir" onClick={() => navigate('/users/create')} />
+            {isAdmin && (
+              <Button
+                label={sending ? 'Enviando...' : 'Convidar'}
+                icon={<UserPlus size={14} />}
+                disabled={!canCreateUser || sending}
+                onClick={handleCriarUsuario}
+                className={!canCreateUser ? 'opacity-30 cursor-not-allowed' : ''}
+              />
+            )}
+           <Button label="Incluir" onClick={() => navigate('/users/create')} />
+            <Button
+              label="Editar"
+              disabled={!selected}
+              onClick={() => selected && navigate(`/users/edit/${selected.id}`)}
+              className={!selected ? 'opacity-30 cursor-not-allowed' : ''}
+            />
             <Button label="Voltar" variant="secondary" onClick={() => navigate('/home')} />
           </div>
         </div>
