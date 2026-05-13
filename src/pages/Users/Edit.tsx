@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { collaboratorService, type Collaborator } from '../../services/collaboratorService';
 import { authService } from '../../services/authService';
+import { scaleService } from '../../services/scaleService';
+import type { Cargo, Setor } from '../../services/scaleService';
 import { Button } from '../../components/Button';
 
 export function Edit() {
@@ -18,6 +20,8 @@ export function Edit() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [fotoFile, setFotoFile] = useState<File | null>(null);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
+  const [cargos, setCargos] = useState<Cargo[]>([]);
+  const [setores, setSetores] = useState<Setor[]>([]);
 
   const [formData, setFormData] = useState<Partial<Collaborator>>({
     nome: '',
@@ -33,8 +37,9 @@ export function Edit() {
   useEffect(() => {
     async function loadInitialData() {
       try {
-        const usuario = await authService.getUsuario();
-        const userIsAdmin = usuario?.role === 'admin';
+        const savedUser = localStorage.getItem('@Intellisys:user');
+        const usuario = savedUser ? JSON.parse(savedUser) : await authService.getUsuario();
+        const userIsAdmin = usuario?.role?.toLowerCase() === 'admin';
 
         if (!userIsAdmin) {
           setIsAdmin(false);
@@ -43,6 +48,10 @@ export function Edit() {
         }
 
         setIsAdmin(true);
+
+        const [cs, ss] = await Promise.all([scaleService.getCargos(), scaleService.getSetores()]);
+        setCargos(cs);
+        setSetores(ss);
 
         if (!id) return;
         const data = await collaboratorService.getById(id);
@@ -74,7 +83,7 @@ export function Edit() {
     setFotoPreview(URL.createObjectURL(file));
   };
 
-  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSave = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!id) return;
     try {
@@ -253,21 +262,25 @@ export function Edit() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               <div className="flex flex-col gap-1">
                 <label className="text-[10px] text-gray-400 font-bold uppercase ml-1">Setor</label>
-                <input
-                  type="text"
+                <select
                   value={formData.setor}
                   onChange={(e) => setFormData({ ...formData, setor: e.target.value })}
-                  className="w-full h-11 px-4 rounded-xl border border-gray-200 text-sm font-bold text-gray-700 focus:border-[#B5071A] outline-none transition-all"
-                />
+                  className="w-full h-11 px-4 rounded-xl border border-gray-200 text-sm font-bold text-gray-700 focus:border-[#B5071A] outline-none transition-all bg-white cursor-pointer"
+                >
+                  <option value="">Selecione...</option>
+                  {setores.map(s => <option key={s.id} value={s.nome}>{s.nome}</option>)}
+                </select>
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-[10px] text-gray-400 font-bold uppercase ml-1">Cargo</label>
-                <input
-                  type="text"
+                <select
                   value={formData.cargo}
                   onChange={(e) => setFormData({ ...formData, cargo: e.target.value })}
-                  className="w-full h-11 px-4 rounded-xl border border-gray-200 text-sm font-bold text-gray-700 focus:border-[#B5071A] outline-none transition-all"
-                />
+                  className="w-full h-11 px-4 rounded-xl border border-gray-200 text-sm font-bold text-gray-700 focus:border-[#B5071A] outline-none transition-all bg-white cursor-pointer"
+                >
+                  <option value="">Selecione...</option>
+                  {cargos.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
+                </select>
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-[10px] text-gray-400 font-bold uppercase ml-1 flex items-center gap-1">

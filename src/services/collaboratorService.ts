@@ -56,4 +56,8 @@ export const collaboratorService = {
   update: async (id: string, data: Partial<Collaborator>): Promise<void> => {
     await api.patch(`/colaboradores/${id}`, data);
   },
+
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/colaboradores/${id}`);
+  },
 };

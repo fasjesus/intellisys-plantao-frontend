@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Activity, Loader2, UserPlus } from 'lucide-react';
+import { Activity, Loader2, UserPlus, ShieldCheck } from 'lucide-react';
 import { Button } from '../../components/Button';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { SearchBar } from '../../components/SearchBar';
@@ -216,6 +216,9 @@ export function All() {
               />
             )}
            <Button label="Incluir" onClick={() => navigate('/users/create')} />
+            {isAdmin && (
+              <Button label="Permissões" icon={<ShieldCheck size={14} />} onClick={() => navigate('/users/permissions')} />
+            )}
             <Button
               label="Editar"
               disabled={!selected}

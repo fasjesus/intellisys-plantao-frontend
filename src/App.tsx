@@ -12,6 +12,8 @@ import { Duty } from './pages/Duty';
 import { Edit } from './pages/Users/Edit';
 import { Create } from './pages/Users/Create';
 import { ModeloComunicacao } from './pages/ModeloComunicacao';
+import { Cadastro } from './pages/Cadastro';
+import { Permissions } from './pages/Users/Permissions';
 
 export function App() {
   const location = useLocation();
@@ -21,6 +23,7 @@ export function App() {
     <Routes location={location} key={location.pathname}>
       {/* Telas sem Sidebar/Header padrão */}
       <Route path="/" element={<Login />} />
+      <Route path="/cadastro" element={<Cadastro />} />
       <Route path="/home" element={<Home />} />
 
       {/* Telas com AppLayout */}
@@ -28,6 +31,7 @@ export function App() {
         <Route path="/scale/month" element={<Month />} />
         <Route path="/scale/suggestion" element={<Suggestion />} />
         <Route path="/users" element={<UsersAll />} />
+        <Route path="/users/permissions" element={<Permissions />} />
         <Route path="/users/details/:id" element={<Details />} />
         <Route path="/users/edit/:id" element={<Edit />} />
         <Route path="/users/create" element={<Create />} />

@@ -42,7 +42,7 @@ export function Month() {
         const result: Record<string, DayInfo> = {};
 
         for (const p of plantoes) {
-          const dateKey = p.periodo.inicio.split('T')[0];
+          const dateKey = p.periodo.Inicio.split('T')[0];
           if (!colaboradoresCache[p.colaborador_id]) {
             try {
               const colab = await collaboratorService.getById(p.colaborador_id);
@@ -93,11 +93,12 @@ export function Month() {
   };
 
   const weeks = getWeeks();
+  const cellHeight = `calc((100dvh - 80px - 258px - ${weeks.length - 1}px) / ${weeks.length})`;
 
   return (
-    <div className="p-4 md:p-8 bg-white min-h-full font-inter flex flex-col">
+    <div className="p-4 md:p-6 bg-white font-inter flex flex-col" style={{ height: 'calc(100dvh - 80px)' }}>
       {/* HEADER */}
-      <div className="flex items-center justify-center mb-6 max-w-5xl mx-auto w-full">
+      <div className="flex items-center justify-center mb-4 max-w-5xl mx-auto w-full">
         <div className="text-center">
           <h2 className="text-xl md:text-2xl font-bold text-[#B5071A]">Escala</h2>
           <p className="text-[10px] md:text-sm text-gray-500 font-medium">Controle de escalas de plantões.</p>
@@ -106,7 +107,7 @@ export function Month() {
 
       <div className="max-w-5xl mx-auto w-full flex-grow flex flex-col overflow-hidden">
         {/* NAVEGAÇÃO */}
-        <div className="flex items-center justify-between mb-6 px-2">
+        <div className="flex items-center justify-between mb-4 px-2">
           <div className="flex gap-4 items-center font-bold text-gray-800">
             <ChevronLeft size={24} className="cursor-pointer hover:text-[#B5071A]" onClick={prevMonth} />
             <span className="text-lg md:text-xl">{capitalizedMonth} {year}</span>
@@ -160,31 +161,33 @@ export function Month() {
             </div>
 
             {/* DESKTOP */}
-            <div className="hidden md:block border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white">
-              <div className="grid grid-cols-7 bg-white border-b border-gray-200">
+            <div className="hidden md:block border border-gray-100 rounded-xl overflow-hidden shadow-sm bg-white">
+              <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-100">
                 {daysOfWeek.map(day => (
-                  <div key={day} className="py-4 text-center text-[10px] font-bold text-gray-400 tracking-widest">{day}</div>
+                  <div key={day} className="py-3 text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">{day}</div>
                 ))}
               </div>
-              <div className="max-h-[360px] overflow-y-auto custom-scrollbar">
-                <div className="grid grid-cols-7 bg-gray-200 gap-[1px]">
-                  {weeks.flatMap(w => w).map((day, i) => {
-                    if (!day) return <div key={`empty-${i}`} className="h-28 bg-white" />;
-                    const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                    const info = dayData[dateKey];
-                    return (
-                      <div key={i} className="h-28 bg-white p-3 flex flex-col justify-between items-end hover:bg-gray-50 transition-colors">
-                        <div className="w-full text-left">
-                          <span className={`text-[10px] font-bold block truncate ${info?.holiday ? 'text-[#B5071A]' : 'text-gray-700'}`}>
-                            {info?.employee || 'A decidir'}
+              <div className="grid grid-cols-7 bg-gray-100 gap-[1px]">
+                {weeks.flatMap(w => w).map((day, i) => {
+                  if (!day) return <div key={`empty-${i}`} style={{ height: cellHeight }} className="bg-white" />;
+                  const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                  const info = dayData[dateKey];
+                  return (
+                    <div key={i} style={{ height: cellHeight }} className={`p-2 flex flex-col justify-between transition-colors hover:bg-gray-50 ${info?.holiday ? 'bg-[#B5071A]/5' : 'bg-white'}`}>
+                      <div className="flex flex-col gap-1">
+                        <span className={`text-xl font-bold leading-none ${info?.holiday ? 'text-[#B5071A]' : 'text-[#B8BEC7]'}`}>{day}</span>
+                        {info?.holiday && (
+                          <span className="text-[9px] font-bold text-[#B5071A] uppercase leading-tight line-clamp-2">
+                            {info.holiday}
                           </span>
-                          {info?.holiday && <span className="text-[8px] text-gray-400 font-bold">{info.holiday}</span>}
-                        </div>
-                        <span className={`text-sm font-bold ${info?.holiday ? 'text-[#B5071A]' : 'text-gray-400'}`}>{day}</span>
+                        )}
                       </div>
-                    );
-                  })}
-                </div>
+                      <span className={`text-[10px] font-semibold truncate ${info?.employee ? 'text-gray-700' : 'text-gray-300 italic'}`}>
+                        {info?.employee || 'A decidir'}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </>
@@ -192,7 +195,7 @@ export function Month() {
       </div>
 
       {/* BOTÕES */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 md:relative md:border-none md:p-0 md:mt-6 md:flex md:justify-end">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 md:relative md:border-none md:p-0 md:mt-4 md:flex md:justify-end">
         <div className="grid grid-cols-3 gap-2 md:flex md:gap-3">
           <button className="bg-[#B5071A] text-white py-3 md:px-8 md:py-2.5 rounded-xl font-bold text-[10px] md:text-xs shadow-md active:scale-95 transition-all">Relatório</button>
           <button onClick={() => navigate('/scale/suggestion')} className="bg-[#B5071A] text-white py-3 md:px-8 md:py-2.5 rounded-xl font-bold text-[10px] md:text-xs shadow-md active:scale-95 transition-all">Sugestão</button>

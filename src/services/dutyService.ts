@@ -4,10 +4,10 @@ export interface Duty {
   id: string;
   colaborador_id: string;
   periodo: {
-    inicio: string;
-    fim: string;
+    Inicio: string;
+    Fim: string;
   };
-  status: 'PENDENTE' | 'APROVADO' | 'RECUSADO';
+  status: string;
   valor_total: number;
   observacoes: string | null;
 }
@@ -18,8 +18,8 @@ export const dutyService = {
     return response.data;
   },
 
-  getByPeriod: async (startDate: string, endDate: string): Promise<Duty[]> => {
-    const response = await api.get(`/plantoes/periodo/${startDate}/${endDate}`);
+  getById: async (id: string): Promise<Duty> => {
+    const response = await api.get(`/plantoes/${id}`);
     return response.data;
   },
 
@@ -28,7 +28,29 @@ export const dutyService = {
     return response.data;
   },
 
+  getByStatus: async (status: 'PENDENTE' | 'APROVADO' | 'RECUSADO'): Promise<Duty[]> => {
+    const response = await api.get(`/plantoes/status/${status}`);
+    return response.data;
+  },
+
+  getByPeriod: async (startDate: string, endDate: string): Promise<Duty[]> => {
+    const response = await api.get(`/plantoes/periodo/${startDate}/${endDate}`);
+    return response.data;
+  },
+
+  create: async (payload: {
+    colaborador_id: string;
+    periodo: { inicio: string; fim: string };
+  }): Promise<Duty> => {
+    const response = await api.post('/plantoes', payload);
+    return response.data;
+  },
+
   updateStatus: async (id: string, newStatus: string, observacoes?: string): Promise<void> => {
     await api.patch(`/plantoes/${id}/status`, { new_status: newStatus, observacoes });
+  },
+
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/plantoes/${id}`);
   },
 };
