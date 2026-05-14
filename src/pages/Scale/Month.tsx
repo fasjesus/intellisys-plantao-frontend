@@ -29,9 +29,10 @@ export function Month() {
     async function loadData() {
       setLoading(true);
       try {
-        const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
-        const lastDay = new Date(year, month + 1, 0).getDate();
-        const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${lastDay}`;
+        const prevMonth = new Date(year, month, 0);
+        const startDate = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}-${String(prevMonth.getDate()).padStart(2, '0')}`;
+        const nextDay = new Date(year, month + 1, 1);
+        const endDate = `${nextDay.getFullYear()}-${String(nextDay.getMonth() + 1).padStart(2, '0')}-${String(nextDay.getDate()).padStart(2, '0')}`;
 
         const [plantoes, feriados] = await Promise.all([
           dutyService.getByPeriod(startDate, endDate),
@@ -41,8 +42,12 @@ export function Month() {
         const colaboradoresCache: Record<string, string> = {};
         const result: Record<string, DayInfo> = {};
 
-        for (const p of plantoes) {
-          const dateKey = p.periodo.Inicio.split('T')[0];
+for (const p of (Array.isArray(plantoes) ? plantoes : [])) {
+          const periodo = p.periodo as any;
+          const inicioRaw: string = periodo?.Inicio ?? periodo?.inicio ?? '';
+          const fimRaw: string = periodo?.Fim ?? periodo?.fim ?? '';
+          if (!inicioRaw) continue;
+
           if (!colaboradoresCache[p.colaborador_id]) {
             try {
               const colab = await collaboratorService.getById(p.colaborador_id);
@@ -51,10 +56,27 @@ export function Month() {
               colaboradoresCache[p.colaborador_id] = '—';
             }
           }
-          result[dateKey] = { employee: colaboradoresCache[p.colaborador_id] };
+
+          // Converte para data local ignorando timezone — pega só YYYY-MM-DD
+          const toLocalDate = (iso: string) => {
+            // Se tem offset (+HH:MM ou -HH:MM), converte manualmente para local
+            const localStr = new Date(iso).toLocaleDateString('en-CA'); // YYYY-MM-DD no locale local
+            return localStr;
+          };
+
+          const inicioDate = toLocalDate(inicioRaw);
+          const fimDate = fimRaw ? toLocalDate(fimRaw) : inicioDate;
+
+          const cursor = new Date(inicioDate + 'T12:00:00');
+          const fimCursor = new Date(fimDate + 'T12:00:00');
+          while (cursor <= fimCursor) {
+            const dateKey = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`;
+            result[dateKey] = { employee: colaboradoresCache[p.colaborador_id] };
+            cursor.setDate(cursor.getDate() + 1);
+          }
         }
 
-        for (const f of feriados) {
+        for (const f of (Array.isArray(feriados) ? feriados : [])) {
           const dateKey = f.data.split('T')[0];
           result[dateKey] = {
             employee: result[dateKey]?.employee ?? '',

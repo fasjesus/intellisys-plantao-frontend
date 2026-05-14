@@ -49,7 +49,7 @@ export function Sidebar({ isOpen, onToggle, onClose, onLogout }: SidebarProps) {
   const logoutButton = () => (
     <div className="mt-auto">
       <div className="mx-3 border-t border-gray-200" />
-{onLogout && (
+      {onLogout && (
         <button
           onClick={onLogout}
           title="Sair do sistema"

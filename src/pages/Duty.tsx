@@ -3,7 +3,7 @@ import { useNavigate, useOutletContext } from 'react-router-dom';
 import {
   AlertCircle,
   Info, DollarSign, Edit, Plus, Calendar, FileText,
-  Loader2, X
+  Loader2, X, Trash2
 } from 'lucide-react';
 import { SearchBar } from '../components/SearchBar';
 import { dutyService, type Duty } from '../services/dutyService';
@@ -32,6 +32,8 @@ export function Duty() {
   const [colaboradores, setColaboradores] = useState<Collaborator[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
   const [form, setForm] = useState<CreateForm>({
     colaborador_id: '',
     inicio: '',
@@ -122,6 +124,29 @@ setPlantoes(withNomes);
     }
   };
 
+  const toggleSelect = (id: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const handleDelete = async () => {
+    if (selected.size === 0) return;
+    if (!confirm(`Deletar ${selected.size} plantão(ões)?`)) return;
+    setDeleting(true);
+    try {
+      await Promise.all([...selected].map(id => dutyService.delete(id)));
+      setPlantoes(prev => prev.filter(p => !selected.has(p.id)));
+      setSelected(new Set());
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Erro ao deletar plantão.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const formatDate = (iso: string) => {
     if (!iso) return '—';
     const date = new Date(iso);
@@ -194,7 +219,7 @@ setPlantoes(withNomes);
             ) : filtered.map((p) => (
               <div key={p.id} className="grid grid-cols-[80px_1fr_1fr_1fr_1fr_1fr] px-6 py-4 border-b border-gray-50 items-center hover:bg-gray-50 transition-colors cursor-pointer">
                 <div className="flex justify-start">
-                  <input type="checkbox" className="w-4 h-4 accent-[#B5071A]" />
+                  <input type="checkbox" checked={selected.has(p.id)} onChange={() => toggleSelect(p.id)} className="w-4 h-4 accent-[#B5071A]" />
                 </div>
                 <span className="text-xs font-bold text-gray-400">{p.id.split('-')[0].toUpperCase()}</span>
                 <span className="text-xs font-bold text-gray-700">{formatDate(p.periodo.Inicio)}</span>
@@ -221,7 +246,7 @@ setPlantoes(withNomes);
               <div key={p.id} className="bg-gray-50 border border-gray-100 rounded-xl p-4 shadow-sm">
                 <div className="flex justify-between items-start mb-2">
                   <span className="text-[10px] font-bold text-gray-400">CÓD: {p.id.split('-')[0].toUpperCase()}</span>
-                  <input type="checkbox" className="w-5 h-5 accent-[#B5071A]" />
+                  <input type="checkbox" checked={selected.has(p.id)} onChange={() => toggleSelect(p.id)} className="w-5 h-5 accent-[#B5071A]" />
                 </div>
                 <p className="text-sm font-bold text-gray-700">{p.funcionario}</p>
                 <p className="text-[11px] text-gray-500">{formatDate(p.periodo.Inicio)} até {formatDate(p.periodo.Fim)}</p>
@@ -251,6 +276,14 @@ setPlantoes(withNomes);
             <button className="flex items-center justify-center gap-2 bg-[#1E293B] text-white py-2.5 rounded-lg text-[10px] font-bold uppercase shadow-sm active:scale-95 transition-all">
               <Info size={14} /> Detalhes
             </button>
+            <button
+              onClick={handleDelete}
+              disabled={selected.size === 0 || deleting}
+              className="flex items-center justify-center gap-2 bg-[#B5071A] text-white py-2.5 rounded-lg text-[10px] font-bold uppercase shadow-sm active:scale-95 transition-all disabled:opacity-30"
+            >
+              {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+              Deletar
+            </button>
             <button className="flex items-center justify-center gap-2 bg-[#1E293B] text-white py-2.5 rounded-lg text-[10px] font-bold uppercase shadow-sm active:scale-95 transition-all">
               <DollarSign size={14} /> Pagar
             </button>
@@ -260,10 +293,10 @@ setPlantoes(withNomes);
             <button onClick={() => setShowModal(true)} className="flex items-center justify-center gap-2 bg-[#1E293B] text-white py-2.5 rounded-lg text-[10px] font-bold uppercase shadow-sm active:scale-95 transition-all">
               <Plus size={14} /> Inserir
             </button>
-            <button className="flex items-center justify-center gap-2 bg-[#1E293B] text-white py-2.5 rounded-lg text-[10px] font-bold uppercase shadow-sm active:scale-95 transition-all">
+            <button onClick={() => navigate('/scale/month')} className="flex items-center justify-center gap-2 bg-[#1E293B] text-white py-2.5 rounded-lg text-[10px] font-bold uppercase shadow-sm active:scale-95 transition-all">
               <Calendar size={14} /> Escala
             </button>
-            <button className="flex items-center justify-center gap-2 bg-[#1E293B] text-white py-2.5 rounded-lg text-[10px] font-bold uppercase shadow-sm active:scale-95 transition-all">
+            <button onClick={() => navigate('/reports')} className="flex items-center justify-center gap-2 bg-[#1E293B] text-white py-2.5 rounded-lg text-[10px] font-bold uppercase shadow-sm active:scale-95 transition-all">
               <FileText size={14} /> Relatório
             </button>
             <button onClick={() => navigate('/home')} className="flex items-center justify-center gap-2 bg-gray-400 text-white py-2.5 rounded-lg text-[10px] font-bold uppercase shadow-sm active:scale-95 transition-all">
