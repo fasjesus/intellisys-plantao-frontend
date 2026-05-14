@@ -1,11 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
-import {
-  AlertCircle,
-  Info, DollarSign, Edit, Plus, Calendar, FileText,
-  Loader2, X, Trash2
-} from 'lucide-react';
+import { AlertCircle, Info, Plus, Loader2, X, Trash2 } from 'lucide-react';
 import { SearchBar } from '../components/SearchBar';
+import { Button } from '../components/Button';
 import { dutyService, type Duty } from '../services/dutyService';
 import { collaboratorService, type Collaborator } from '../services/collaboratorService';
 
@@ -32,7 +29,7 @@ export function Duty() {
   const [colaboradores, setColaboradores] = useState<Collaborator[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selected, setSelected] = useState<DutyWithNome | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [form, setForm] = useState<CreateForm>({
     colaborador_id: '',
@@ -124,22 +121,14 @@ setPlantoes(withNomes);
     }
   };
 
-  const toggleSelect = (id: string) => {
-    setSelected(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
-
   const handleDelete = async () => {
-    if (selected.size === 0) return;
-    if (!confirm(`Deletar ${selected.size} plantão(ões)?`)) return;
+    if (!selected) return;
+    if (!confirm(`Deletar plantão de ${selected.funcionario}?`)) return;
     setDeleting(true);
     try {
-      await Promise.all([...selected].map(id => dutyService.delete(id)));
-      setPlantoes(prev => prev.filter(p => !selected.has(p.id)));
-      setSelected(new Set());
+      await dutyService.delete(selected.id);
+      setPlantoes(prev => prev.filter(p => p.id !== selected.id));
+      setSelected(null);
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Erro ao deletar plantão.');
     } finally {
@@ -204,36 +193,41 @@ setPlantoes(withNomes);
 
         {/* TABELA DESKTOP */}
         <div className="hidden md:block border border-gray-100 rounded-xl overflow-hidden shadow-sm bg-white mb-6">
-          <div className="grid grid-cols-[80px_1fr_1fr_1fr_1fr_1fr] bg-gray-50 border-b border-gray-100 px-6 py-4">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest"> </span>
+          <div className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr] bg-gray-50 border-b border-gray-100 px-6 py-4">
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Código</span>
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Início</span>
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Fim</span>
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</span>
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Funcionário</span>
           </div>
-
           <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
             {filtered.length === 0 ? (
               <p className="text-center text-gray-400 text-sm py-10">Nenhum plantão encontrado.</p>
-            ) : filtered.map((p) => (
-              <div key={p.id} className="grid grid-cols-[80px_1fr_1fr_1fr_1fr_1fr] px-6 py-4 border-b border-gray-50 items-center hover:bg-gray-50 transition-colors cursor-pointer">
-                <div className="flex justify-start">
-                  <input type="checkbox" checked={selected.has(p.id)} onChange={() => toggleSelect(p.id)} className="w-4 h-4 accent-[#B5071A]" />
+            ) : filtered.map((p) => {
+              const isSelected = selected?.id === p.id;
+              return (
+                <div
+                  key={p.id}
+                  onClick={() => setSelected(prev => prev?.id === p.id ? null : p)}
+                  className={[
+                    'grid grid-cols-[1fr_1fr_1fr_1fr_1fr] px-6 py-4 border-b border-gray-50 items-center transition-colors cursor-pointer',
+                    isSelected ? 'bg-red-50 border-l-2 border-l-[#B5071A]' : 'hover:bg-gray-50',
+                  ].join(' ')}
+                >
+                  <span className="text-xs font-bold text-gray-400">{p.id.split('-')[0].toUpperCase()}</span>
+                  <span className="text-xs font-bold text-gray-700">{formatDate(p.periodo.Inicio)}</span>
+                  <span className="text-xs font-bold text-gray-700">{formatDate(p.periodo.Fim)}</span>
+                  <span className={`text-xs font-bold px-2 py-1 rounded-full w-fit ${
+                    p.status === 'APROVADO' || p.status === '1' ? 'text-green-600 bg-green-50' :
+                    p.status === 'RECUSADO' || p.status === '2' ? 'text-red-600 bg-red-50' :
+                    'text-orange-600 bg-orange-50'
+                  }`}>
+                    {statusLabel[p.status] ?? p.status}
+                  </span>
+                  <span className="text-xs font-bold text-gray-700">{p.funcionario}</span>
                 </div>
-                <span className="text-xs font-bold text-gray-400">{p.id.split('-')[0].toUpperCase()}</span>
-                <span className="text-xs font-bold text-gray-700">{formatDate(p.periodo.Inicio)}</span>
-                <span className="text-xs font-bold text-gray-700">{formatDate(p.periodo.Fim)}</span>
-                <span className={`text-xs font-bold px-2 py-1 rounded-full w-fit ${
-                  p.status === 'APROVADO' || p.status === '1' ? 'text-green-600 bg-green-50' :
-                  p.status === 'RECUSADO' || p.status === '2' ? 'text-red-600 bg-red-50' :
-                  'text-orange-600 bg-orange-50'
-                }`}>
-                  {statusLabel[p.status] ?? p.status}
-                </span>
-                <span className="text-xs font-bold text-gray-700">{p.funcionario}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -242,27 +236,31 @@ setPlantoes(withNomes);
           <div className="max-h-[360px] overflow-y-auto space-y-3 pb-4 pr-1 custom-scrollbar">
             {filtered.length === 0 ? (
               <p className="text-center text-gray-400 text-sm py-10">Nenhum plantão encontrado.</p>
-            ) : filtered.map((p) => (
-              <div key={p.id} className="bg-gray-50 border border-gray-100 rounded-xl p-4 shadow-sm">
-                <div className="flex justify-between items-start mb-2">
-                  <span className="text-[10px] font-bold text-gray-400">CÓD: {p.id.split('-')[0].toUpperCase()}</span>
-                  <input type="checkbox" checked={selected.has(p.id)} onChange={() => toggleSelect(p.id)} className="w-5 h-5 accent-[#B5071A]" />
+            ) : filtered.map((p) => {
+              const isSelected = selected?.id === p.id;
+              return (
+                <div
+                  key={p.id}
+                  onClick={() => setSelected(prev => prev?.id === p.id ? null : p)}
+                  className={[
+                    'border rounded-xl p-4 shadow-sm cursor-pointer transition-all',
+                    isSelected ? 'bg-red-50 border-[#B5071A]' : 'bg-gray-50 border-gray-100',
+                  ].join(' ')}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="text-[10px] font-bold text-gray-400">CÓD: {p.id.split('-')[0].toUpperCase()}</span>
+                    <span className={`text-[10px] font-bold uppercase ${
+                      p.status === 'APROVADO' || p.status === '1' ? 'text-green-600' :
+                      p.status === 'RECUSADO' || p.status === '2' ? 'text-red-600' :
+                      'text-orange-500'
+                    }`}>{statusLabel[p.status] ?? p.status}</span>
+                  </div>
+                  <p className="text-sm font-bold text-gray-700">{p.funcionario}</p>
+                  <p className="text-[11px] text-gray-500">{formatDate(p.periodo.Inicio)} até {formatDate(p.periodo.Fim)}</p>
                 </div>
-                <p className="text-sm font-bold text-gray-700">{p.funcionario}</p>
-                <p className="text-[11px] text-gray-500">{formatDate(p.periodo.Inicio)} até {formatDate(p.periodo.Fim)}</p>
-                <div className="mt-3 flex justify-end">
-                  <span className={`text-[10px] font-bold uppercase ${
-                    p.status === 'APROVADO' ? 'text-green-600' :
-                    p.status === 'RECUSADO' ? 'text-red-600' :
-                    'text-orange-500'
-                  }`}>
-                    {statusLabel[p.status] ?? p.status}
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
-
           {filtered.length > 2 && (
             <div className="text-center py-2">
               <div className="w-8 h-1 bg-gray-200 rounded-full mx-auto animate-pulse"></div>
@@ -271,37 +269,34 @@ setPlantoes(withNomes);
         </div>
 
         {/* TOOLBAR */}
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 md:relative md:border-none md:p-0">
-          <div className="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-9 gap-2">
-            <button className="flex items-center justify-center gap-2 bg-[#1E293B] text-white py-2.5 rounded-lg text-[10px] font-bold uppercase shadow-sm active:scale-95 transition-all">
-              <Info size={14} /> Detalhes
-            </button>
-            <button
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 md:relative md:border-none md:p-0 md:mt-6 md:flex md:justify-end md:gap-3">
+          <div className="grid grid-cols-2 gap-2 md:flex md:gap-3">
+            <Button
+              label="Detalhes"
+              icon={<Info size={14} />}
+              variant="secondary"
+              disabled={!selected}
+              className={!selected ? 'opacity-30 cursor-not-allowed' : ''}
+              onClick={() => selected && navigate(`/users/details/${selected.colaborador_id}`)}
+            />
+            <Button
+              label={deleting ? 'Deletando...' : 'Deletar'}
+              icon={deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+              disabled={!selected || deleting}
+              className={!selected ? 'opacity-30 cursor-not-allowed' : ''}
               onClick={handleDelete}
-              disabled={selected.size === 0 || deleting}
-              className="flex items-center justify-center gap-2 bg-[#B5071A] text-white py-2.5 rounded-lg text-[10px] font-bold uppercase shadow-sm active:scale-95 transition-all disabled:opacity-30"
-            >
-              {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-              Deletar
-            </button>
-            <button className="flex items-center justify-center gap-2 bg-[#1E293B] text-white py-2.5 rounded-lg text-[10px] font-bold uppercase shadow-sm active:scale-95 transition-all">
-              <DollarSign size={14} /> Pagar
-            </button>
-            <button className="flex items-center justify-center gap-2 bg-[#1E293B] text-white py-2.5 rounded-lg text-[10px] font-bold uppercase shadow-sm active:scale-95 transition-all">
-              <Edit size={14} /> Alterar
-            </button>
-            <button onClick={() => setShowModal(true)} className="flex items-center justify-center gap-2 bg-[#1E293B] text-white py-2.5 rounded-lg text-[10px] font-bold uppercase shadow-sm active:scale-95 transition-all">
-              <Plus size={14} /> Inserir
-            </button>
-            <button onClick={() => navigate('/scale/month')} className="flex items-center justify-center gap-2 bg-[#1E293B] text-white py-2.5 rounded-lg text-[10px] font-bold uppercase shadow-sm active:scale-95 transition-all">
-              <Calendar size={14} /> Escala
-            </button>
-            <button onClick={() => navigate('/reports')} className="flex items-center justify-center gap-2 bg-[#1E293B] text-white py-2.5 rounded-lg text-[10px] font-bold uppercase shadow-sm active:scale-95 transition-all">
-              <FileText size={14} /> Relatório
-            </button>
-            <button onClick={() => navigate('/home')} className="flex items-center justify-center gap-2 bg-gray-400 text-white py-2.5 rounded-lg text-[10px] font-bold uppercase shadow-sm active:scale-95 transition-all">
-              Voltar
-            </button>
+            />
+            <Button
+              label="Inserir"
+              icon={<Plus size={14} />}
+              variant="secondary"
+              onClick={() => setShowModal(true)}
+            />
+            <Button
+              label="Voltar"
+              variant="secondary"
+              onClick={() => navigate('/home')}
+            />
           </div>
         </div>
       </div>
