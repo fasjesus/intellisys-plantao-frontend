@@ -31,6 +31,7 @@ export function Duty() {
   const [saving, setSaving] = useState(false);
   const [selected, setSelected] = useState<DutyWithNome | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [showDetalhes, setShowDetalhes] = useState(false);
   const [form, setForm] = useState<CreateForm>({
     colaborador_id: '',
     inicio: '',
@@ -277,7 +278,7 @@ setPlantoes(withNomes);
               variant="secondary"
               disabled={!selected}
               className={!selected ? 'opacity-30 cursor-not-allowed' : ''}
-              onClick={() => selected && navigate(`/users/details/${selected.colaborador_id}`)}
+              onClick={() => selected && setShowDetalhes(true)}
             />
             <Button
               label={deleting ? 'Deletando...' : 'Deletar'}
@@ -300,6 +301,46 @@ setPlantoes(withNomes);
           </div>
         </div>
       </div>
+
+      {/* MODAL DETALHES */}
+      {showDetalhes && selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-[#B5071A]">Detalhes do Plantão</h3>
+                <p className="text-[10px] text-gray-400 font-medium">CÓD: {selected.id.split('-')[0].toUpperCase()}</p>
+              </div>
+              <button onClick={() => setShowDetalhes(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="border border-gray-100 rounded-xl overflow-hidden">
+              {[
+                { label: 'Funcionário', value: selected.funcionario },
+                { label: 'Início', value: formatDate(selected.periodo.Inicio) },
+                { label: 'Fim', value: formatDate(selected.periodo.Fim) },
+                { label: 'Status', value: statusLabel[selected.status] ?? selected.status },
+                { label: 'Valor Total', value: selected.valor_total != null ? `R$ ${selected.valor_total.toFixed(2)}` : '—' },
+                { label: 'Observações', value: selected.observacoes || '—' },
+              ].map(({ label, value }, i) => (
+                <div key={label} className={`flex justify-between px-4 py-3 ${i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</span>
+                  <span className="text-xs font-bold text-gray-700 text-right max-w-[60%] truncate">{value}</span>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setShowDetalhes(false)}
+              className="w-full py-2.5 rounded-xl border border-gray-200 text-[10px] font-bold uppercase text-gray-500 hover:bg-gray-50 transition-all"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* MODAL CRIAR PLANTÃO */}
       {showModal && (
