@@ -14,6 +14,7 @@ import { Create } from './pages/Users/Create';
 import { ModeloComunicacao } from './pages/ModeloComunicacao';
 import { Cadastro } from './pages/Cadastro';
 import { Permissions } from './pages/Users/Permissions';
+import { ReportPrint } from './pages/ReportPrint';
 
 export function App() {
   const location = useLocation();
@@ -25,6 +26,7 @@ export function App() {
       <Route path="/" element={<Login />} />
       <Route path="/cadastro" element={<Cadastro />} />
       <Route path="/home" element={<Home />} />
+      <Route path="/reports/print" element={<ReportPrint />} />
 
       {/* Telas com AppLayout */}
       <Route element={<AppLayout />}>

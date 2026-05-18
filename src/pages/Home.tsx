@@ -1,5 +1,5 @@
 import { useState, cloneElement, useEffect } from 'react';
-import { Calendar, Users, Clock, CalendarDays, CheckCircle, Loader2 } from 'lucide-react';
+import { Calendar, Users, Clock, CalendarDays, CheckCircle, Loader2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { SearchBar } from '../components/SearchBar';
 import { ToolCard } from '../components/ToolCard';
@@ -9,15 +9,33 @@ import { motion } from 'framer-motion';
 import { authService } from '../services/authService';
 import { dutyService, type Duty } from '../services/dutyService';
 
+const isPendente = (status: string) => status === 'PENDENTE' || String(status) === '0';
+
+const statusLabel: Record<string, string> = {
+  PENDENTE: 'Aberto', APROVADO: 'Pago', RECUSADO: 'Recusado',
+  '0': 'Aberto', '1': 'Pago', '2': 'Recusado',
+};
+
+const formatDate = (iso: string) => {
+  if (!iso) return '—';
+  const date = new Date(iso);
+  return isNaN(date.getTime()) ? '—' : date.toLocaleDateString('pt-BR');
+};
+
+const getPerioido = (p: Duty) => {
+  const per = p.periodo as any;
+  return { inicio: per.Inicio ?? per.inicio ?? '', fim: per.Fim ?? per.fim ?? '' };
+};
+
 export function Home() {
   const [searchTerm, setSearchTerm] = useState('');
   const [userName, setUserName] = useState('USUÁRIO');
   const [userPhoto, setUserPhoto] = useState<string | undefined>();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [plantaoAtivo, setPlantaoAtivo] = useState<Duty | null>(null);
+  const [plantoes, setPlantoes] = useState<Duty[]>([]);
+  const [selected, setSelected] = useState<Duty | null>(null);
   const [observacoes, setObservacoes] = useState('');
   const [concluding, setConcluding] = useState(false);
-  const [concluded, setConcluded] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -32,42 +50,42 @@ export function Home() {
           setUserName(colaborador.nome);
           setUserPhoto(colaborador.foto_url || undefined);
           localStorage.setItem('@Intellisys:colaborador', JSON.stringify(colaborador));
-
           if (!admin) {
             try {
-              const plantoes = await dutyService.getByColaborador(colabId);
-              const ativo = Array.isArray(plantoes)
-                ? plantoes.find(p => p.status === 'PENDENTE') ?? null
-                : null;
-              setPlantaoAtivo(ativo);
-              if (ativo?.observacoes) setObservacoes(ativo.observacoes);
+              const data = await dutyService.getByColaborador(colabId);
+              setPlantoes(Array.isArray(data) ? data.filter(p => isPendente(p.status)) : []);
             } catch {
-              setPlantaoAtivo(null);
+              setPlantoes([]);
             }
           }
         }
       } catch (error) {
-        console.error("Erro no fluxo de busca de nome:", error);
+        console.error('Erro no fluxo de busca de nome:', error);
       }
     }
-
     loadData();
   }, []);
 
+  const handleSelectRow = (p: Duty) => {
+    setSelected(p);
+    setObservacoes(p.observacoes ?? '');
+  };
+
   const handleConcluir = async () => {
-    if (!plantaoAtivo) return;
+    if (!selected) return;
     setConcluding(true);
     try {
-      await dutyService.updateStatus(plantaoAtivo.id, 'APROVADO', observacoes);
-      setConcluded(true);
-      setPlantaoAtivo(null);
+      await dutyService.updateStatus(selected.id, 'APROVADO', observacoes);
+      setPlantoes(prev => prev.filter(x => x.id !== selected.id));
+      setSelected(null);
+      setObservacoes('');
     } finally {
       setConcluding(false);
     }
   };
 
   const handleLogout = () => {
-    authService.logout(); // Limpa tokens e localStorage
+    authService.logout();
     navigate('/');
   };
 
@@ -75,16 +93,10 @@ export function Home() {
     if (e) e.preventDefault();
     const query = searchTerm.toLowerCase().trim();
     if (!query) return;
-
-    if (query.includes('escala') || query.includes('mês') || query.includes('ano')) {
-      navigate('/scale/month');
-    } else if (query.includes('colab') || query.includes('equipe') || query.includes('user')) {
-      navigate('/users');
-    } else if (query.includes('plant') || query.includes('hora')) {
-      navigate('/duty');
-    } else {
-      navigate(`/users?search=${encodeURIComponent(searchTerm)}`);
-    }
+    if (query.includes('escala') || query.includes('mês')) navigate('/scale/month');
+    else if (query.includes('colab') || query.includes('equipe')) navigate('/users');
+    else if (query.includes('plant')) navigate('/duty');
+    else navigate(`/users?search=${encodeURIComponent(searchTerm)}`);
   };
 
   return (
@@ -98,24 +110,21 @@ export function Home() {
         onLogout={handleLogout}
       />
 
-      {/* MAIN */}
       <motion.main
         className="flex-grow flex flex-col items-center pt-6 md:pt-24 px-6 gap-4 md:gap-12"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.3 }}
       >
-
         <div className="text-center mb-2 md:mb-0">
           <h2 className="text-xl md:text-3xl font-medium text-gray-800">
             Olá, <span className="text-[#B5071A] font-bold">{userName.split(' ')[0]}</span>
           </h2>
           <p className="text-gray-500 text-xs md:text-base leading-relaxed">
-            {isAdmin ? 'Gerencie aqui sua equipe de plantões.' : 'Confira seu plantão de hoje.'}
+            {isAdmin ? 'Gerencie aqui sua equipe de plantões.' : 'Confira seus plantões.'}
           </p>
         </div>
 
-        {/* BUSCA MOBILE - só admin */}
         {isAdmin && (
           <div className="w-full max-w-md md:hidden mb-4">
             <form onSubmit={handleGlobalSearch}>
@@ -124,7 +133,6 @@ export function Home() {
           </div>
         )}
 
-        {/* GRID DE FERRAMENTAS - apenas admin */}
         {isAdmin && (
           <div className="flex flex-col md:flex-row md:justify-center gap-3 md:gap-4 w-full max-w-3xl mt-10 pb-8">
             {[
@@ -155,78 +163,120 @@ export function Home() {
 
         {/* VIEW DO COLABORADOR */}
         {!isAdmin && (
-          <div className="w-full max-w-md mt-6 pb-8">
-            {concluded ? (
-              <div className="flex flex-col items-center gap-3 py-12 text-center">
-                <CheckCircle size={48} className="text-green-500" />
-                <p className="text-gray-700 font-bold text-base">Plantão concluído!</p>
-                <p className="text-gray-400 text-xs">Obrigado pelo seu trabalho.</p>
-              </div>
-            ) : plantaoAtivo ? (
-              <div className="border border-gray-100 rounded-2xl shadow-sm bg-white overflow-hidden">
-                {/* Header do card */}
-                <div className="bg-gray-50 border-b border-gray-100 px-5 py-4 flex items-center gap-3">
-                  <Clock size={16} className="text-[#B5071A] shrink-0" />
-                  <div>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Plantão Ativo</p>
-                    <p className="text-xs font-bold text-gray-700">
-                      {new Date(plantaoAtivo.periodo.Inicio).toLocaleDateString('pt-BR')} →{' '}
-                      {new Date(plantaoAtivo.periodo.Fim).toLocaleDateString('pt-BR')}
-                    </p>
-                  </div>
-                  <span className="ml-auto text-[10px] font-bold text-orange-500 bg-orange-50 px-2 py-1 rounded-full uppercase">
-                    Em andamento
-                  </span>
-                </div>
-
-                {/* Valor */}
-                <div className="px-5 py-4 border-b border-gray-50">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Valor</p>
-                  <p className="text-lg font-bold text-gray-800">
-                    {plantaoAtivo.valor_total != null ? `R$ ${plantaoAtivo.valor_total.toFixed(2)}` : '—'}
-                  </p>
-                </div>
-
-                {/* Observações */}
-                <div className="px-5 py-4">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">
-                    Observações
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={observacoes}
-                    onChange={e => setObservacoes(e.target.value)}
-                    placeholder="Adicione uma observação sobre este plantão..."
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-[#B5071A] transition-colors resize-none"
-                  />
-                </div>
-
-                {/* Botão concluir */}
-                <div className="px-5 pb-5">
-                  <button
-                    onClick={handleConcluir}
-                    disabled={concluding}
-                    className="w-full bg-[#B5071A] text-white py-3 rounded-xl font-bold text-xs uppercase tracking-widest shadow-md active:scale-95 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
-                  >
-                    {concluding
-                      ? <><Loader2 size={14} className="animate-spin" /> Concluindo...</>
-                      : <><CheckCircle size={14} /> Concluir Plantão</>
-                    }
-                  </button>
-                </div>
-              </div>
-            ) : (
+          <div className="w-full max-w-2xl mt-4 pb-8 flex flex-col gap-3">
+            {plantoes.length === 0 ? (
               <div className="flex flex-col items-center gap-3 py-12 text-center">
                 <Clock size={40} className="text-gray-200" />
                 <p className="text-gray-500 font-bold text-sm">Nenhum plantão ativo no momento.</p>
                 <p className="text-gray-400 text-xs">Quando houver um plantão atribuído a você, ele aparecerá aqui.</p>
               </div>
-            )}
+            ) : plantoes.map(p => {
+              const { inicio, fim } = getPerioido(p);
+              const isSelected = selected?.id === p.id;
+              return (
+                <div
+                  key={p.id}
+                  onClick={() => handleSelectRow(p)}
+                  className={[
+                    'border rounded-2xl p-5 cursor-pointer transition-all shadow-sm',
+                    isSelected ? 'border-[#B5071A] bg-red-50' : 'border-gray-100 bg-white hover:border-gray-200 hover:shadow-md',
+                  ].join(' ')}
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Clock size={16} className={isSelected ? 'text-[#B5071A]' : 'text-gray-400'} />
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                        CÓD: {p.id.split('-')[0].toUpperCase()}
+                      </span>
+                    </div>
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${
+                      p.status === 'APROVADO' || p.status === '1' ? 'text-green-600 bg-green-50' :
+                      p.status === 'RECUSADO' || p.status === '2' ? 'text-red-600 bg-red-50' :
+                      'text-orange-600 bg-orange-50'
+                    }`}>
+                      {statusLabel[p.status] ?? p.status}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Início</p>
+                      <p className="text-sm font-bold text-gray-700">{formatDate(inicio)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Fim</p>
+                      <p className="text-sm font-bold text-gray-700">{formatDate(fim)}</p>
+                    </div>
+                    {p.valor_total != null && p.valor_total > 0 && (
+                      <div>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Valor</p>
+                        <p className="text-sm font-bold text-gray-700">R$ {p.valor_total.toFixed(2)}</p>
+                      </div>
+                    )}
+                    {p.observacoes && (
+                      <div className="col-span-2">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Observações</p>
+                        <p className="text-xs text-gray-600">{p.observacoes}</p>
+                      </div>
+                    )}
+                  </div>
+
+                </div>
+              );
+            })}
           </div>
         )}
       </motion.main>
 
       <AppFooter />
+
+      {/* MODAL DETALHES DO PLANTÃO */}
+      {selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-[#B5071A]">Plantão Ativo</h3>
+                <p className="text-[10px] text-gray-400 font-medium">
+                  {formatDate(getPerioido(selected).inicio)} → {formatDate(getPerioido(selected).fim)}
+                </p>
+              </div>
+              <button onClick={() => { setSelected(null); setObservacoes(''); }} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            {selected.valor_total != null && selected.valor_total > 0 && (
+              <div className="bg-gray-50 rounded-xl px-4 py-3">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Valor</p>
+                <p className="text-lg font-bold text-gray-800">R$ {selected.valor_total.toFixed(2)}</p>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Observações</label>
+              <textarea
+                rows={3}
+                value={observacoes}
+                onChange={e => setObservacoes(e.target.value)}
+                placeholder="Adicione uma observação..."
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-[#B5071A] transition-colors resize-none"
+              />
+            </div>
+
+            <button
+              onClick={handleConcluir}
+              disabled={concluding}
+              className="w-full bg-[#B5071A] text-white py-3 rounded-xl font-bold text-xs uppercase tracking-widest shadow-md active:scale-95 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+            >
+              {concluding
+                ? <><Loader2 size={14} className="animate-spin" /> Concluindo...</>
+                : <><CheckCircle size={14} /> Concluir Plantão</>
+              }
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
