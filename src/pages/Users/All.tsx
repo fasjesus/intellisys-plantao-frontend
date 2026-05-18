@@ -26,7 +26,7 @@ export function All() {
     async function loadCollaborators() {
       try {
         const usuario = await authService.getUsuario();
-        const userIsAdmin = usuario?.role === 'admin';
+        const userIsAdmin = usuario?.role?.toLowerCase() === 'admin';
         setIsAdmin(userIsAdmin);
         if (!userIsAdmin) return;
 

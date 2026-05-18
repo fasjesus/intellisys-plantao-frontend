@@ -43,7 +43,8 @@ export function Create() {
         setCargos(cs);
         setSetores(ss);
       } catch {
-        navigate('/');
+        alert('Erro ao carregar dados do formulário. Tente novamente.');
+        navigate('/users');
       } finally {
         setLoading(false);
       }
