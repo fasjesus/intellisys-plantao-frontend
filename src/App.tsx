@@ -14,6 +14,7 @@ import { Create } from './pages/Users/Create';
 import { ModeloComunicacao } from './pages/ModeloComunicacao';
 import { Cadastro } from './pages/Cadastro';
 import { Permissions } from './pages/Users/Permissions';
+import { DutyHistory } from './pages/Users/DutyHistory';
 import { ReportPrint } from './pages/ReportPrint';
 
 export function App() {
@@ -36,6 +37,7 @@ export function App() {
         <Route path="/users/permissions" element={<Permissions />} />
         <Route path="/users/details/:id" element={<Details />} />
         <Route path="/users/edit/:id" element={<Edit />} />
+        <Route path="/users/duty-history/:id" element={<DutyHistory />} />
         <Route path="/users/create" element={<Create />} />
         <Route path="/modelo-comunicacao" element={<ModeloComunicacao />} />
         <Route path="/reports" element={<Reports />} />

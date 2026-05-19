@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  Mail, Phone, Calendar, ShieldCheck,
+  Mail, ShieldCheck,
   UserCircle, Briefcase, Loader2, AlertCircle
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -169,7 +169,7 @@ export function Details() {
       {/* BOTÕES DE AÇÃO */}
       <div className="flex flex-col md:flex-row justify-end gap-3 mt-8 md:mt-12 max-w-5xl mx-auto">
         <Button label="Editar Registro" fullWidthMobile onClick={() => navigate(`/users/edit/${user.id}`)} />
-        <Button label="Histórico de Plantões" fullWidthMobile />
+        <Button label="Histórico de Plantões" fullWidthMobile onClick={() => navigate(`/users/duty-history/${user.id}`)} />
         <Button label="Voltar para Lista" variant="secondary" fullWidthMobile onClick={() => navigate('/users')} />
       </div>
     </div>
