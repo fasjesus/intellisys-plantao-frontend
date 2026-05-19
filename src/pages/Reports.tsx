@@ -6,6 +6,7 @@ import { dutyService } from '../services/dutyService';
 import { Button } from '../components/Button';
 import { pdf } from '@react-pdf/renderer';
 import { ReportTemplate, registerFonts } from '../components/ReportTemplate';
+import type { ReportGroup } from '../components/ReportTemplate';
 
 interface ReportRow {
   colaborador: string;
@@ -127,7 +128,22 @@ export function Reports() {
       } catch { /* sem logo */ }
 
       registerFonts();
-      const element = ReportTemplate({ rows, periodoInicio, periodoFim, funcionarioNome, emitidoEm, totalValor, logoBase64 });
+
+      let groups: ReportGroup[] | undefined;
+      if (!employee) {
+        const groupMap = new Map<string, ReportGroup>();
+        for (const r of rows) {
+          if (!groupMap.has(r.colaborador)) {
+            groupMap.set(r.colaborador, { funcionarioNome: r.colaborador, rows: [], totalValor: 0 });
+          }
+          const g = groupMap.get(r.colaborador)!;
+          g.rows.push(r);
+          g.totalValor += r.valor ?? 0;
+        }
+        groups = Array.from(groupMap.values()).sort((a, b) => a.funcionarioNome.localeCompare(b.funcionarioNome));
+      }
+
+      const element = ReportTemplate({ rows, periodoInicio, periodoFim, funcionarioNome, emitidoEm, totalValor, logoBase64, groups });
       const blob = await pdf(element).toBlob();
       const url = URL.createObjectURL(blob);
 

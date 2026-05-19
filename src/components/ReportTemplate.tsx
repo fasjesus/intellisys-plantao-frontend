@@ -23,6 +23,12 @@ interface ReportRow {
   valor: number | null;
 }
 
+export interface ReportGroup {
+  funcionarioNome: string;
+  rows: ReportRow[];
+  totalValor: number;
+}
+
 interface ReportTemplateProps {
   rows: ReportRow[];
   periodoInicio: string;
@@ -31,6 +37,7 @@ interface ReportTemplateProps {
   emitidoEm: string;
   totalValor: number;
   logoBase64: string;
+  groups?: ReportGroup[];
 }
 
 const statusLabel: Record<string, string> = {
@@ -115,7 +122,8 @@ const s = StyleSheet.create({
   footerL2: { fontFamily: REGULAR, fontWeight: 400, fontSize: 6.5, color: GRAY9 },
 });
 
-const COL = { func: '35%', data: '15%', status: '20%', valor: '15%' };
+const COL = { data: '20%', status: '22%', valor: '18%' };
+const COL_FUNC = '40%';
 
 function BadgeStatus({ status }: { status: string }) {
   const label = statusLabel[status] ?? status;
@@ -130,84 +138,132 @@ function BadgeStatus({ status }: { status: string }) {
   );
 }
 
-export function ReportTemplate({ rows, periodoInicio, periodoFim, funcionarioNome, emitidoEm, totalValor, logoBase64 }: ReportTemplateProps) {
+interface PageContentProps {
+  rows: ReportRow[];
+  periodoInicio: string;
+  periodoFim: string;
+  funcionarioNome: string;
+  emitidoEm: string;
+  totalValor: number;
+  logoBase64: string;
+  year: number;
+  showFuncCol: boolean;
+}
+
+function ReportPage({ rows, periodoInicio, periodoFim, funcionarioNome, emitidoEm, totalValor, logoBase64, year, showFuncCol }: PageContentProps) {
+  return (
+    <Page size="A4" style={s.page}>
+      {/* LOGO */}
+      <View style={s.logoBloco}>
+        {logoBase64 ? <Image style={s.logoImg} src={logoBase64} /> : null}
+        <View style={s.logoSep} />
+        <View>
+          <Text style={s.logoTitulo}>Relatório de Escala de Plantões</Text>
+          <Text style={s.logoSub}>Intellisys Informática Ltda</Text>
+        </View>
+      </View>
+
+      {/* INFO */}
+      <View style={s.infoBloco}>
+        <View style={s.infoCampos}>
+          <View>
+            <Text style={s.campoLabel}>Período</Text>
+            <Text style={s.campoValor}>{periodoInicio} - {periodoFim}</Text>
+          </View>
+          <View>
+            <Text style={s.campoLabel}>Funcionário</Text>
+            <Text style={s.campoValor}>{funcionarioNome}</Text>
+          </View>
+          <View>
+            <Text style={s.campoLabel}>Plantões</Text>
+            <Text style={s.campoValor}>{rows.length}</Text>
+          </View>
+        </View>
+        <View>
+          <Text style={s.totalLabel}>Valor Total</Text>
+          <Text style={s.totalValor}>R$ {totalValor.toFixed(2)}</Text>
+        </View>
+      </View>
+
+      {/* TABELA */}
+      <View style={s.tableContainer}>
+        <View style={s.tableHeader}>
+          {showFuncCol && <Text style={[s.thCell, { width: COL_FUNC }]}>Funcionário</Text>}
+          <Text style={[s.thCell, { width: COL.data }]}>Início</Text>
+          <Text style={[s.thCell, { width: COL.data }]}>Fim</Text>
+          <Text style={[s.thCell, { width: COL.status }]}>Status</Text>
+          <Text style={[s.thCell, { width: COL.valor, textAlign: 'right', flex: showFuncCol ? 0 : 1 }]}>Valor</Text>
+        </View>
+
+        {rows.map((r, i) => (
+          <View key={i} style={[s.tableRow, i % 2 !== 0 ? s.tableRowAlt : {}]} wrap={false}>
+            {showFuncCol && <Text style={[s.tdCell, s.tdBold, { width: COL_FUNC }]}>{r.colaborador}</Text>}
+            <Text style={[s.tdCell, { width: COL.data }]}>{formatDate(r.inicio)}</Text>
+            <Text style={[s.tdCell, { width: COL.data }]}>{formatDate(r.fim)}</Text>
+            <View style={[s.tdCell, { width: COL.status, justifyContent: 'center' }]}>
+              <BadgeStatus status={r.status} />
+            </View>
+            <Text style={[s.tdCell, s.tdRight, { width: COL.valor, flex: showFuncCol ? 0 : 1 }]}>
+              {r.valor != null ? `R$ ${r.valor.toFixed(2)}` : '—'}
+            </Text>
+          </View>
+        ))}
+
+        <View style={s.tableFoot}>
+          {showFuncCol && <Text style={[s.tfCell, { width: COL_FUNC }]} />}
+          <Text style={[s.tfCell, { flex: 1 }]}>{rows.length} plantão(ões) no período</Text>
+          <Text style={[s.tfCell, { width: COL.status }]}>Total</Text>
+          <Text style={[s.tfCell, s.tfTotal, { width: COL.valor }]}>R$ {totalValor.toFixed(2)}</Text>
+        </View>
+      </View>
+
+      {/* FOOTER */}
+      <View style={s.footer} fixed>
+        <View style={s.footerSep} />
+        <Text style={s.footerL1}>Intellisys Informática Ltda — Todos os direitos reservados © {year}</Text>
+        <Text style={s.footerL2}>Documento gerado automaticamente pelo sistema de gestão de plantões · Emitido em: {emitidoEm}</Text>
+      </View>
+    </Page>
+  );
+}
+
+export function ReportTemplate({ rows, periodoInicio, periodoFim, funcionarioNome, emitidoEm, totalValor, logoBase64, groups }: ReportTemplateProps) {
   const year = new Date().getFullYear();
+
+  if (groups && groups.length > 1) {
+    return (
+      <Document>
+        {groups.map((g, idx) => (
+          <ReportPage
+            key={idx}
+            rows={g.rows}
+            periodoInicio={periodoInicio}
+            periodoFim={periodoFim}
+            funcionarioNome={g.funcionarioNome}
+            emitidoEm={emitidoEm}
+            totalValor={g.totalValor}
+            logoBase64={logoBase64}
+            year={year}
+            showFuncCol={false}
+          />
+        ))}
+      </Document>
+    );
+  }
 
   return (
     <Document>
-      <Page size="A4" style={s.page}>
-
-        {/* LOGO */}
-        <View style={s.logoBloco}>
-          {logoBase64 ? <Image style={s.logoImg} src={logoBase64} /> : null}
-          <View style={s.logoSep} />
-          <View>
-            <Text style={s.logoTitulo}>Relatório de Escala de Plantões</Text>
-            <Text style={s.logoSub}>Intellisys Informática Ltda</Text>
-          </View>
-        </View>
-
-        {/* INFO */}
-        <View style={s.infoBloco}>
-          <View style={s.infoCampos}>
-            <View>
-              <Text style={s.campoLabel}>Período</Text>
-              <Text style={s.campoValor}>{periodoInicio} - {periodoFim}</Text>
-            </View>
-            <View>
-              <Text style={s.campoLabel}>Funcionário</Text>
-              <Text style={s.campoValor}>{funcionarioNome}</Text>
-            </View>
-            <View>
-              <Text style={s.campoLabel}>Plantões</Text>
-              <Text style={s.campoValor}>{rows.length}</Text>
-            </View>
-          </View>
-          <View>
-            <Text style={s.totalLabel}>Valor Total</Text>
-            <Text style={s.totalValor}>R$ {totalValor.toFixed(2)}</Text>
-          </View>
-        </View>
-
-        {/* TABELA */}
-        <View style={s.tableContainer}>
-          <View style={s.tableHeader}>
-            <Text style={[s.thCell, { width: COL.func }]}>Funcionário</Text>
-            <Text style={[s.thCell, { width: COL.data }]}>Início</Text>
-            <Text style={[s.thCell, { width: COL.data }]}>Fim</Text>
-            <Text style={[s.thCell, { width: COL.status }]}>Status</Text>
-            <Text style={[s.thCell, { width: COL.valor, textAlign: 'right' }]}>Valor</Text>
-          </View>
-
-          {rows.map((r, i) => (
-            <View key={i} style={[s.tableRow, i % 2 !== 0 ? s.tableRowAlt : {}]} wrap={false}>
-              <Text style={[s.tdCell, s.tdBold, { width: COL.func }]}>{r.colaborador}</Text>
-              <Text style={[s.tdCell, { width: COL.data }]}>{formatDate(r.inicio)}</Text>
-              <Text style={[s.tdCell, { width: COL.data }]}>{formatDate(r.fim)}</Text>
-              <View style={[s.tdCell, { width: COL.status, justifyContent: 'center' }]}>
-                <BadgeStatus status={r.status} />
-              </View>
-              <Text style={[s.tdCell, s.tdRight, { width: COL.valor }]}>
-                {r.valor != null ? `R$ ${r.valor.toFixed(2)}` : '—'}
-              </Text>
-            </View>
-          ))}
-
-          <View style={s.tableFoot}>
-            <Text style={[s.tfCell, { width: '65%' }]}>{rows.length} plantão(ões) no período</Text>
-            <Text style={[s.tfCell, { width: COL.status }]}>Total Geral</Text>
-            <Text style={[s.tfCell, s.tfTotal, { width: COL.valor }]}>R$ {totalValor.toFixed(2)}</Text>
-          </View>
-        </View>
-
-        {/* FOOTER */}
-        <View style={s.footer} fixed>
-          <View style={s.footerSep} />
-          <Text style={s.footerL1}>Intellisys Informática Ltda — Todos os direitos reservados © {year}</Text>
-          <Text style={s.footerL2}>Documento gerado automaticamente pelo sistema de gestão de plantões · Emitido em: {emitidoEm}</Text>
-        </View>
-
-      </Page>
+      <ReportPage
+        rows={rows}
+        periodoInicio={periodoInicio}
+        periodoFim={periodoFim}
+        funcionarioNome={funcionarioNome}
+        emitidoEm={emitidoEm}
+        totalValor={totalValor}
+        logoBase64={logoBase64}
+        year={year}
+        showFuncCol={funcionarioNome === 'Todos'}
+      />
     </Document>
   );
 }
