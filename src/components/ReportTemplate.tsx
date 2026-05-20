@@ -122,8 +122,8 @@ const s = StyleSheet.create({
   footerL2: { fontFamily: REGULAR, fontWeight: 400, fontSize: 6.5, color: GRAY9 },
 });
 
-const COL = { data: '20%', status: '22%', valor: '18%' };
-const COL_FUNC = '40%';
+const COL_WITH_FUNC = { funcionario: '37%', data: '15%', status: '17%', valor: '16%' };
+const COL_WITHOUT_FUNC = { funcionario: '0%', data: '24%', status: '22%', valor: '30%' };
 
 function BadgeStatus({ status }: { status: string }) {
   const label = statusLabel[status] ?? status;
@@ -151,6 +151,8 @@ interface PageContentProps {
 }
 
 function ReportPage({ rows, periodoInicio, periodoFim, funcionarioNome, emitidoEm, totalValor, logoBase64, year, showFuncCol }: PageContentProps) {
+  const col = showFuncCol ? COL_WITH_FUNC : COL_WITHOUT_FUNC;
+
   return (
     <Page size="A4" style={s.page}>
       {/* LOGO */}
@@ -188,32 +190,32 @@ function ReportPage({ rows, periodoInicio, periodoFim, funcionarioNome, emitidoE
       {/* TABELA */}
       <View style={s.tableContainer}>
         <View style={s.tableHeader}>
-          {showFuncCol && <Text style={[s.thCell, { width: COL_FUNC }]}>Funcionário</Text>}
-          <Text style={[s.thCell, { width: COL.data }]}>Início</Text>
-          <Text style={[s.thCell, { width: COL.data }]}>Fim</Text>
-          <Text style={[s.thCell, { width: COL.status }]}>Status</Text>
-          <Text style={[s.thCell, { width: COL.valor, textAlign: 'right', flex: showFuncCol ? 0 : 1 }]}>Valor</Text>
+          {showFuncCol && <Text style={[s.thCell, { width: col.funcionario }]}>Funcionário</Text>}
+          <Text style={[s.thCell, { width: col.data }]}>Início</Text>
+          <Text style={[s.thCell, { width: col.data }]}>Fim</Text>
+          <Text style={[s.thCell, { width: col.status }]}>Status</Text>
+          <Text style={[s.thCell, { width: col.valor, textAlign: 'right' }]}>Valor</Text>
         </View>
 
         {rows.map((r, i) => (
           <View key={i} style={[s.tableRow, i % 2 !== 0 ? s.tableRowAlt : {}]} wrap={false}>
-            {showFuncCol && <Text style={[s.tdCell, s.tdBold, { width: COL_FUNC }]}>{r.colaborador}</Text>}
-            <Text style={[s.tdCell, { width: COL.data }]}>{formatDate(r.inicio)}</Text>
-            <Text style={[s.tdCell, { width: COL.data }]}>{formatDate(r.fim)}</Text>
-            <View style={[s.tdCell, { width: COL.status, justifyContent: 'center' }]}>
+            {showFuncCol && <Text style={[s.tdCell, s.tdBold, { width: col.funcionario }]}>{r.colaborador}</Text>}
+            <Text style={[s.tdCell, { width: col.data }]}>{formatDate(r.inicio)}</Text>
+            <Text style={[s.tdCell, { width: col.data }]}>{formatDate(r.fim)}</Text>
+            <View style={[s.tdCell, { width: col.status, justifyContent: 'center' }]}>
               <BadgeStatus status={r.status} />
             </View>
-            <Text style={[s.tdCell, s.tdRight, { width: COL.valor, flex: showFuncCol ? 0 : 1 }]}>
+            <Text style={[s.tdCell, s.tdRight, { width: col.valor }]}>
               {r.valor != null ? `R$ ${r.valor.toFixed(2)}` : '—'}
             </Text>
           </View>
         ))}
 
         <View style={s.tableFoot}>
-          {showFuncCol && <Text style={[s.tfCell, { width: COL_FUNC }]} />}
+          {showFuncCol && <Text style={[s.tfCell, { width: col.funcionario }]} />}
           <Text style={[s.tfCell, { flex: 1 }]}>{rows.length} plantão(ões) no período</Text>
-          <Text style={[s.tfCell, { width: COL.status }]}>Total</Text>
-          <Text style={[s.tfCell, s.tfTotal, { width: COL.valor }]}>R$ {totalValor.toFixed(2)}</Text>
+          <Text style={[s.tfCell, { width: col.status }]}>Total</Text>
+          <Text style={[s.tfCell, s.tfTotal, { width: col.valor }]}>R$ {totalValor.toFixed(2)}</Text>
         </View>
       </View>
 
