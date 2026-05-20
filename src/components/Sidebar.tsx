@@ -73,10 +73,10 @@ export function Sidebar({ isOpen, onToggle, onClose, onLogout }: SidebarProps) {
       )}
 
       {/* Wrapper relative para posicionar o botão toggle na borda */}
-      <div className="relative hidden md:block shrink-0">
+      <div className="relative hidden md:flex flex-col shrink-0 self-stretch">
         <aside
           className={[
-            'bg-white flex flex-col h-full transition-all duration-300 ease-in-out',
+            'bg-white flex flex-col flex-1 transition-all duration-300 ease-in-out',
             'shadow-[4px_0_12px_-2px_rgba(0,0,0,0.08)]',
             isOpen ? 'w-56' : 'w-16',
           ].join(' ')}
