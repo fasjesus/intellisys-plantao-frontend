@@ -41,6 +41,7 @@ export function Permissions() {
         setUsers(usuariosRaw.map((u: any) => ({
           ...u,
           nome: colabMap[u.id_colaborador] ?? '—',
+          ativo: u.ativo?.toLowerCase() === 'ativo' || u.ativo === true || u.ativo === 'S' ? 'S' : 'N',
         })));
 
         setRoles(rolesRaw.data);

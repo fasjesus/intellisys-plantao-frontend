@@ -79,6 +79,8 @@ export function Home() {
       setPlantoes(prev => prev.filter(x => x.id !== selected.id));
       setSelected(null);
       setObservacoes('');
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Erro ao concluir plantão. Tente novamente.');
     } finally {
       setConcluding(false);
     }

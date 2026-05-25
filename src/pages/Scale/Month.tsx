@@ -184,9 +184,9 @@ for (const p of (Array.isArray(plantoes) ? plantoes : [])) {
 
             {/* DESKTOP */}
             <div className="hidden md:block border border-gray-100 rounded-xl overflow-hidden shadow-sm bg-white">
-              <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-100">
+              <div className="grid grid-cols-7 bg-gray-100 gap-[1px]">
                 {daysOfWeek.map(day => (
-                  <div key={day} className="py-3 text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">{day}</div>
+                  <div key={day} className="py-3 text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50">{day}</div>
                 ))}
               </div>
               <div className="grid grid-cols-7 bg-gray-100 gap-[1px]">

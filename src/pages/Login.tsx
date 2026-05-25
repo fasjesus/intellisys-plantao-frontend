@@ -23,6 +23,13 @@ export function Login() {
     setLoading(true);
     try {
       await authService.login({ email: email.trim(), senha: password });
+      const colaboradorRaw = localStorage.getItem('@Intellisys:colaborador');
+      const colaborador = colaboradorRaw ? JSON.parse(colaboradorRaw) : null;
+      if (colaborador && colaborador.status?.toLowerCase() === 'inativo') {
+        authService.logout();
+        setError("Sua conta está inativa. Entre em contato com o administrador.");
+        return;
+      }
       navigate('/home');
     } catch (err: any) {
       setError(err.response?.data?.message || "E-mail ou senha incorretos.");

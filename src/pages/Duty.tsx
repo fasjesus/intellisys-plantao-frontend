@@ -91,8 +91,8 @@ setPlantoes(withNomes);
       await dutyService.create({
         colaborador_id: form.colaborador_id,
         periodo: {
-          inicio: `${form.inicio}T00:00:00Z`,
-          fim: `${form.fim}T23:59:59Z`,
+          inicio: `${form.inicio}T12:00:00Z`,
+          fim: `${form.fim}T12:00:00Z`,
         },
       });
       setShowModal(false);
