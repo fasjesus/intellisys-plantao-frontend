@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import logo from '../assets/images/logo.png';
+import { statusLabel, statusColors } from '../utils/dutyStatus';
 
 interface ReportRow {
   colaborador: string;
@@ -18,10 +19,6 @@ interface PrintData {
   totalValor: number;
 }
 
-const statusLabel: Record<string, string> = {
-  PENDENTE: 'Aberto', APROVADO: 'Pago', RECUSADO: 'Recusado',
-  '0': 'Aberto', '1': 'Pago', '2': 'Recusado',
-};
 
 const formatDate = (iso: string) => {
   if (!iso) return '—';
@@ -125,10 +122,9 @@ export function ReportPrint() {
                   <span style={{
                     display: 'inline-block', padding: '2px 10px', borderRadius: '20px',
                     fontSize: '9px', fontWeight: 700, textTransform: 'uppercase',
-                    background: r.status === 'APROVADO' || r.status === '1' ? '#f0fdf4' : r.status === 'RECUSADO' || r.status === '2' ? '#fef2f2' : '#fff7ed',
-                    color: r.status === 'APROVADO' || r.status === '1' ? '#15803d' : r.status === 'RECUSADO' || r.status === '2' ? '#b91c1c' : '#c2410c',
+                    ...statusColors(r.status),
                   }}>
-                    {statusLabel[r.status] ?? r.status}
+                    {statusLabel(r.status)}
                   </span>
                 </td>
                 <td style={{ padding: '9px 16px', textAlign: 'right', fontWeight: 600, color: '#111827', borderBottom: '1px solid #f3f4f6' }}>

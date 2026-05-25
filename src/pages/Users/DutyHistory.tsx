@@ -6,18 +6,8 @@ import { dutyService, type Duty } from '../../services/dutyService';
 import { Button } from '../../components/Button';
 import { pdf } from '@react-pdf/renderer';
 import { ReportTemplate, registerFonts } from '../../components/ReportTemplate';
+import { statusLabel, statusClass as statusStyle } from '../../utils/dutyStatus';
 
-const statusLabel: Record<string, string> = {
-  PENDENTE: 'Aberto', APROVADO: 'Pago', RECUSADO: 'Recusado',
-  '0': 'Aberto', '1': 'Pago', '2': 'Recusado',
-};
-
-const statusStyle: Record<string, string> = {
-  APROVADO: 'text-green-600 bg-green-50',
-  '1': 'text-green-600 bg-green-50',
-  RECUSADO: 'text-red-600 bg-red-50',
-  '2': 'text-red-600 bg-red-50',
-};
 
 const formatDate = (iso: string) => {
   if (!iso) return '—';
@@ -44,8 +34,8 @@ export function DutyHistory() {
       .then(([colab, ds]) => {
         setColaborador(colab);
         setDuties(ds.sort((a, b) => {
-          const ai = a.periodo?.Inicio ?? a.periodo?.inicio ?? '';
-          const bi = b.periodo?.Inicio ?? b.periodo?.inicio ?? '';
+          const ai = (a.periodo as any)?.Inicio ?? (a.periodo as any)?.inicio ?? '';
+          const bi = (b.periodo as any)?.Inicio ?? (b.periodo as any)?.inicio ?? '';
           return new Date(bi).getTime() - new Date(ai).getTime();
         }));
       })
@@ -161,8 +151,8 @@ export function DutyHistory() {
                 <div key={d.id} className="grid grid-cols-[1fr_1fr_1fr_1fr] px-6 py-4 border-b border-gray-50 items-center hover:bg-gray-50 transition-colors">
                   <span className="text-xs text-gray-600">{formatDate(inicio)}</span>
                   <span className="text-xs text-gray-600">{formatDate(fim)}</span>
-                  <span className={`text-[10px] font-bold px-2 py-1 rounded-full w-fit ${statusStyle[st] ?? 'text-orange-600 bg-orange-50'}`}>
-                    {statusLabel[st] ?? st}
+                  <span className={`text-[10px] font-bold px-2 py-1 rounded-full w-fit ${statusStyle(st)}`}>
+                    {statusLabel(st)}
                   </span>
                   <span className="text-xs font-bold text-gray-700 text-right">
                     {d.valor_total != null ? `R$ ${d.valor_total.toFixed(2)}` : '—'}
@@ -186,8 +176,8 @@ export function DutyHistory() {
               <div key={d.id} className="bg-gray-50 border border-gray-100 rounded-xl p-4 shadow-sm">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-xs text-gray-500">{formatDate(inicio)} → {formatDate(fim)}</span>
-                  <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${statusStyle[st] ?? 'text-orange-600 bg-orange-50'}`}>
-                    {statusLabel[st] ?? st}
+                  <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${statusStyle(st)}`}>
+                    {statusLabel(st)}
                   </span>
                 </div>
                 <p className="text-sm font-bold text-gray-700 text-right">

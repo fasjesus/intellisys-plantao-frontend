@@ -28,7 +28,7 @@ export const dutyService = {
     return response.data;
   },
 
-  getByStatus: async (status: 'PENDENTE' | 'APROVADO' | 'RECUSADO'): Promise<Duty[]> => {
+  getByStatus: async (status: 'AGENDADO' | 'EM_ANDAMENTO' | 'CONCLUIDO' | 'CANCELADO' | 'PAGO'): Promise<Duty[]> => {
     const response = await api.get(`/plantoes/status/${status}`);
     return response.data;
   },

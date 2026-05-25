@@ -10,6 +10,7 @@ export function AppLayout() {
   const [searchTerm, setSearchTerm] = useState('');
   const [userName, setUserName] = useState('USUÁRIO');
   const [userPhoto, setUserPhoto] = useState<string | undefined>();
+  const [userRole, setUserRole] = useState<string>('colaborador');
   const navigate = useNavigate();
 
   // 1. Efeito para carregar o nome e foto do colaborador logado
@@ -17,9 +18,10 @@ export function AppLayout() {
     async function loadUserData() {
       try {
         const usuario = await authService.getUsuario();
+        setUserRole(usuario.role?.toLowerCase() ?? 'colaborador');
         if (usuario.id_colaborador) {
           const colaborador = await authService.getColaborador(usuario.id_colaborador);
-setUserName(colaborador.nome || 'USUÁRIO');
+          setUserName(colaborador.nome || 'USUÁRIO');
           setUserPhoto(colaborador.foto_url || undefined);
         }
       } catch {
@@ -65,6 +67,7 @@ setUserName(colaborador.nome || 'USUÁRIO');
           onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
           onClose={() => setIsSidebarOpen(false)}
           onLogout={handleLogout}
+          role={userRole}
         />
 
         <motion.main

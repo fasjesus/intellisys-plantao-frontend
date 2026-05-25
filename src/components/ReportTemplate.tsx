@@ -40,10 +40,7 @@ interface ReportTemplateProps {
   groups?: ReportGroup[];
 }
 
-const statusLabel: Record<string, string> = {
-  PENDENTE: 'Aberto', APROVADO: 'Pago', RECUSADO: 'Recusado',
-  '0': 'Aberto', '1': 'Pago', '2': 'Recusado',
-};
+import { statusLabel } from '../utils/dutyStatus';
 
 const formatDate = (iso: string) => {
   if (!iso) return '—';
@@ -108,8 +105,12 @@ const s = StyleSheet.create({
   badgeAbertoText: { color: '#c2410c' },
   badgePagoWrap: { backgroundColor: '#f0fdf4' },
   badgePagoText: { color: '#15803d' },
-  badgeRecusadoWrap: { backgroundColor: '#fef2f2' },
-  badgeRecusadoText: { color: '#b91c1c' },
+  badgeCanceladoWrap: { backgroundColor: '#fef2f2' },
+  badgeCanceladoText: { color: '#b91c1c' },
+  badgeConcluidoWrap: { backgroundColor: '#faf5ff' },
+  badgeConcluidoText: { color: '#7e22ce' },
+  badgeAndamentoWrap: { backgroundColor: '#eff6ff' },
+  badgeAndamentoText: { color: '#1d4ed8' },
 
   tableFoot: { flexDirection: 'row', backgroundColor: FOOT_BG, borderTopWidth: 2, borderTopColor: BORDER },
   tfCell: { fontFamily: REGULAR, fontWeight: 700, paddingVertical: 6, paddingHorizontal: 10, fontSize: 8, color: GRAY5 },
@@ -126,14 +127,22 @@ const COL_WITH_FUNC = { funcionario: '37%', data: '15%', status: '17%', valor: '
 const COL_WITHOUT_FUNC = { funcionario: '0%', data: '24%', status: '22%', valor: '30%' };
 
 function BadgeStatus({ status }: { status: string }) {
-  const label = statusLabel[status] ?? status;
-  const isPago = status === 'APROVADO' || status === '1';
-  const isRecusado = status === 'RECUSADO' || status === '2';
+  const label = statusLabel(status);
+  const wrapStyle =
+    status === 'PAGO' ? s.badgePagoWrap :
+    status === 'CANCELADO' ? s.badgeCanceladoWrap :
+    status === 'CONCLUIDO' ? s.badgeConcluidoWrap :
+    status === 'EM_ANDAMENTO' ? s.badgeAndamentoWrap :
+    s.badgeAbertoWrap;
+  const textStyle =
+    status === 'PAGO' ? s.badgePagoText :
+    status === 'CANCELADO' ? s.badgeCanceladoText :
+    status === 'CONCLUIDO' ? s.badgeConcluidoText :
+    status === 'EM_ANDAMENTO' ? s.badgeAndamentoText :
+    s.badgeAbertoText;
   return (
-    <View style={[s.badgeWrap, isPago ? s.badgePagoWrap : isRecusado ? s.badgeRecusadoWrap : s.badgeAbertoWrap]}>
-      <Text style={[s.badgeText, isPago ? s.badgePagoText : isRecusado ? s.badgeRecusadoText : s.badgeAbertoText]}>
-        {label}
-      </Text>
+    <View style={[s.badgeWrap, wrapStyle]}>
+      <Text style={[s.badgeText, textStyle]}>{label}</Text>
     </View>
   );
 }

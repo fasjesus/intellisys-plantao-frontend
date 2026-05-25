@@ -7,6 +7,7 @@ import { Button } from '../components/Button';
 import { pdf } from '@react-pdf/renderer';
 import { ReportTemplate, registerFonts } from '../components/ReportTemplate';
 import type { ReportGroup } from '../components/ReportTemplate';
+import { statusLabel, statusClass } from '../utils/dutyStatus';
 
 interface ReportRow {
   colaborador: string;
@@ -16,10 +17,6 @@ interface ReportRow {
   valor: number | null;
 }
 
-const statusLabel: Record<string, string> = {
-  PENDENTE: 'Aberto', APROVADO: 'Pago', RECUSADO: 'Recusado',
-  '0': 'Aberto', '1': 'Pago', '2': 'Recusado',
-};
 
 const formatDate = (iso: string) => {
   if (!iso) return '—';
@@ -222,11 +219,7 @@ export function Reports() {
                     <span className="text-xs font-bold text-gray-700 truncate">{r.colaborador}</span>
                     <span className="text-xs text-gray-600">{formatDate(r.inicio)}</span>
                     <span className="text-xs text-gray-600">{formatDate(r.fim)}</span>
-                    <span className={`text-xs font-bold px-2 py-1 rounded-full w-fit ${
-                      r.status === 'APROVADO' || r.status === '1' ? 'text-green-600 bg-green-50' :
-                      r.status === 'RECUSADO' || r.status === '2' ? 'text-red-600 bg-red-50' :
-                      'text-orange-600 bg-orange-50'
-                    }`}>{statusLabel[r.status] ?? r.status}</span>
+                    <span className={`text-xs font-bold px-2 py-1 rounded-full w-fit ${statusClass(r.status)}`}>{statusLabel(r.status)}</span>
                     <span className="text-xs font-bold text-gray-700 text-right">{r.valor != null ? `R$ ${r.valor.toFixed(2)}` : '—'}</span>
                   </div>
                 ))}

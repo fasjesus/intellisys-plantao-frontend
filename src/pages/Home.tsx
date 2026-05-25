@@ -8,13 +8,7 @@ import { AppHeader } from '../components/AppHeader';
 import { motion } from 'framer-motion';
 import { authService } from '../services/authService';
 import { dutyService, type Duty } from '../services/dutyService';
-
-const isPendente = (status: string) => status === 'PENDENTE' || String(status) === '0';
-
-const statusLabel: Record<string, string> = {
-  PENDENTE: 'Aberto', APROVADO: 'Pago', RECUSADO: 'Recusado',
-  '0': 'Aberto', '1': 'Pago', '2': 'Recusado',
-};
+import { statusLabel, statusClass, isStatusAtivo, normalizeStatus } from '../utils/dutyStatus';
 
 const formatDate = (iso: string) => {
   if (!iso) return '—';
@@ -53,7 +47,7 @@ export function Home() {
           if (!admin) {
             try {
               const data = await dutyService.getByColaborador(colabId);
-              setPlantoes(Array.isArray(data) ? data.filter(p => isPendente(p.status)) : []);
+              setPlantoes(Array.isArray(data) ? data.filter(p => isStatusAtivo(p.status)) : []);
             } catch {
               setPlantoes([]);
             }
@@ -73,14 +67,15 @@ export function Home() {
 
   const handleConcluir = async () => {
     if (!selected) return;
+    const novoStatus = isStatusAtivo(selected.status) && normalizeStatus(selected.status) === 'AGENDADO' ? 'EM_ANDAMENTO' : 'CONCLUIDO';
     setConcluding(true);
     try {
-      await dutyService.updateStatus(selected.id, 'APROVADO', observacoes);
-      setPlantoes(prev => prev.filter(x => x.id !== selected.id));
-      setSelected(null);
+      await dutyService.updateStatus(selected.id, novoStatus, observacoes);
+      setPlantoes(prev => prev.map(x => x.id === selected.id ? { ...x, status: novoStatus } : x));
+      setSelected(prev => prev ? { ...prev, status: novoStatus } : null);
       setObservacoes('');
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Erro ao concluir plantão. Tente novamente.');
+      alert(err?.response?.data?.message || 'Erro ao atualizar plantão. Tente novamente.');
     } finally {
       setConcluding(false);
     }
@@ -191,12 +186,8 @@ export function Home() {
                         CÓD: {p.id.split('-')[0].toUpperCase()}
                       </span>
                     </div>
-                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${
-                      p.status === 'APROVADO' || p.status === '1' ? 'text-green-600 bg-green-50' :
-                      p.status === 'RECUSADO' || p.status === '2' ? 'text-red-600 bg-red-50' :
-                      'text-orange-600 bg-orange-50'
-                    }`}>
-                      {statusLabel[p.status] ?? p.status}
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${statusClass(p.status)}`}>
+                      {statusLabel(p.status)}
                     </span>
                   </div>
 
@@ -266,16 +257,30 @@ export function Home() {
               />
             </div>
 
-            <button
-              onClick={handleConcluir}
-              disabled={concluding}
-              className="w-full bg-[#B5071A] text-white py-3 rounded-xl font-bold text-xs uppercase tracking-widest shadow-md active:scale-95 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
-            >
-              {concluding
-                ? <><Loader2 size={14} className="animate-spin" /> Concluindo...</>
-                : <><CheckCircle size={14} /> Concluir Plantão</>
-              }
-            </button>
+            {normalizeStatus(selected.status) === 'AGENDADO' && (
+              <button
+                onClick={handleConcluir}
+                disabled={concluding}
+                className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-xs uppercase tracking-widest shadow-md active:scale-95 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {concluding
+                  ? <><Loader2 size={14} className="animate-spin" /> Iniciando...</>
+                  : <><CheckCircle size={14} /> Iniciar Plantão</>
+                }
+              </button>
+            )}
+            {normalizeStatus(selected.status) === 'EM_ANDAMENTO' && (
+              <button
+                onClick={handleConcluir}
+                disabled={concluding}
+                className="w-full bg-[#B5071A] text-white py-3 rounded-xl font-bold text-xs uppercase tracking-widest shadow-md active:scale-95 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {concluding
+                  ? <><Loader2 size={14} className="animate-spin" /> Concluindo...</>
+                  : <><CheckCircle size={14} /> Concluir Plantão</>
+                }
+              </button>
+            )}
           </div>
         </div>
       )}

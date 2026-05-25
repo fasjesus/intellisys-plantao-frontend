@@ -13,7 +13,7 @@ interface Modelo {
 
 const emptyForm = {
   nome: '',
-  tipo_comunicacao: 'Colaborador Cadastrado',
+  tipo_comunicacao: 'PlantaoAgendado',
   assunto: '',
   corpo: '',
 };
@@ -185,7 +185,17 @@ export function ModeloComunicacao() {
                   onChange={handleChange}
                   className="w-full h-11 px-4 rounded-xl border border-gray-200 text-sm font-bold text-gray-700 focus:border-[#B5071A] outline-none transition-all cursor-pointer"
                 >
-                  <option value="Colaborador Cadastrado">Colaborador Cadastrado</option>
+                  <option value="PlantaoAgendado">Plantão Agendado</option>
+                  <option value="PlantaoConcluido">Plantão Concluído</option>
+                  <option value="PlantaoAindaAberto">Plantão Ainda Aberto</option>
+                  <option value="PlantaoPago">Plantão Pago</option>
+                  <option value="ColaboradorCadastrado">Colaborador Cadastrado</option>
+                  <option value="ColaboradorAtualizado">Colaborador Atualizado</option>
+                  <option value="ColaboradorDeletado">Colaborador Deletado</option>
+                  <option value="UsuarioCadastrado">Usuário Cadastrado</option>
+                  <option value="EmailAtualizado">Email Atualizado</option>
+                  <option value="SenhaAtualizada">Senha Atualizada</option>
+                  <option value="UsuarioDeletado">Usuário Deletado</option>
                 </select>
               </div>
               <div className="flex flex-col gap-1">
@@ -203,7 +213,7 @@ export function ModeloComunicacao() {
               <div className="flex flex-col gap-1">
                 <label className="text-[10px] text-gray-400 font-bold uppercase ml-1">
                   Corpo do E-mail
-                  <span className="ml-2 text-gray-300 normal-case font-normal">use {'{{nome}}'} para o nome do colaborador</span>
+                  <span className="ml-2 text-gray-300 normal-case font-normal">{'{{.Nome}}'} {'{{.Email}}'} {'{{.DataInicio}}'} {'{{.DataFim}}'} {'{{.ValorPago}}'} {'{{.Link}}'}</span>
                 </label>
                 <textarea
                   name="corpo"
@@ -211,7 +221,7 @@ export function ModeloComunicacao() {
                   value={formData.corpo}
                   onChange={handleChange}
                   rows={8}
-                  placeholder="Olá {{nome}}, seu acesso foi criado..."
+                  placeholder="Olá {{.Nome}}, seu acesso foi criado..."
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-700 focus:border-[#B5071A] outline-none transition-all resize-none"
                 />
               </div>

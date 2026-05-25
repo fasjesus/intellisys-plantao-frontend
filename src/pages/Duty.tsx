@@ -5,6 +5,7 @@ import { SearchBar } from '../components/SearchBar';
 import { Button } from '../components/Button';
 import { dutyService, type Duty } from '../services/dutyService';
 import { collaboratorService, type Collaborator } from '../services/collaboratorService';
+import { statusLabel, statusClass, normalizeStatus } from '../utils/dutyStatus';
 
 interface DutyWithNome extends Duty {
   funcionario: string;
@@ -143,9 +144,9 @@ setPlantoes(withNomes);
     if (!confirm(`Marcar plantão de ${selected.funcionario} como pago?`)) return;
     setPaying(true);
     try {
-      await dutyService.updateStatus(selected.id, 'APROVADO');
-      setPlantoes(prev => prev.map(p => p.id === selected.id ? { ...p, status: 'APROVADO' } : p));
-      setSelected(prev => prev ? { ...prev, status: 'APROVADO' } : null);
+      await dutyService.updateStatus(selected.id, 'PAGO');
+      setPlantoes(prev => prev.map(p => p.id === selected.id ? { ...p, status: 'PAGO' } : p));
+      setSelected(prev => prev ? { ...prev, status: 'PAGO' } : null);
     } catch (err: any) {
       alert(err?.response?.data?.message || 'Erro ao pagar plantão.');
     } finally {
@@ -159,10 +160,6 @@ setPlantoes(withNomes);
     return isNaN(date.getTime()) ? '—' : date.toLocaleDateString('pt-BR');
   };
 
-  const statusLabel: Record<string, string> = {
-    PENDENTE: 'Aberto', APROVADO: 'Pago', RECUSADO: 'Recusado',
-    '0': 'Aberto', '1': 'Pago', '2': 'Recusado',
-  };
 
   const filtered = plantoes.filter(p =>
     p.funcionario.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -234,12 +231,8 @@ setPlantoes(withNomes);
                   <span className="text-xs font-bold text-gray-400">{p.id.split('-')[0].toUpperCase()}</span>
                   <span className="text-xs font-bold text-gray-700">{formatDate(p.periodo.Inicio)}</span>
                   <span className="text-xs font-bold text-gray-700">{formatDate(p.periodo.Fim)}</span>
-                  <span className={`text-xs font-bold px-2 py-1 rounded-full w-fit ${
-                    p.status === 'APROVADO' || p.status === '1' ? 'text-green-600 bg-green-50' :
-                    p.status === 'RECUSADO' || p.status === '2' ? 'text-red-600 bg-red-50' :
-                    'text-orange-600 bg-orange-50'
-                  }`}>
-                    {statusLabel[p.status] ?? p.status}
+                  <span className={`text-xs font-bold px-2 py-1 rounded-full w-fit ${statusClass(p.status)}`}>
+                    {statusLabel(p.status)}
                   </span>
                   <span className="text-xs font-bold text-gray-700">{p.funcionario}</span>
                 </div>
@@ -266,11 +259,7 @@ setPlantoes(withNomes);
                 >
                   <div className="flex justify-between items-start mb-2">
                     <span className="text-[10px] font-bold text-gray-400">CÓD: {p.id.split('-')[0].toUpperCase()}</span>
-                    <span className={`text-[10px] font-bold uppercase ${
-                      p.status === 'APROVADO' || p.status === '1' ? 'text-green-600' :
-                      p.status === 'RECUSADO' || p.status === '2' ? 'text-red-600' :
-                      'text-orange-500'
-                    }`}>{statusLabel[p.status] ?? p.status}</span>
+                    <span className={`text-[10px] font-bold uppercase ${statusClass(p.status)}`}>{statusLabel(p.status)}</span>
                   </div>
                   <p className="text-sm font-bold text-gray-700">{p.funcionario}</p>
                   <p className="text-[11px] text-gray-500">{formatDate(p.periodo.Inicio)} até {formatDate(p.periodo.Fim)}</p>
@@ -299,8 +288,8 @@ setPlantoes(withNomes);
             <Button
               label={paying ? 'Pagando...' : 'Pagar'}
               icon={paying ? <Loader2 size={14} className="animate-spin" /> : <CircleDollarSign size={14} />}
-              disabled={!selected || paying || selected?.status === 'APROVADO' || selected?.status === '1'}
-              className={(!selected || selected?.status === 'APROVADO' || selected?.status === '1') ? 'opacity-30 cursor-not-allowed' : ''}
+              disabled={!selected || paying || normalizeStatus(selected?.status ?? '') !== 'CONCLUIDO'}
+              className={(!selected || normalizeStatus(selected?.status ?? '') !== 'CONCLUIDO') ? 'opacity-30 cursor-not-allowed' : ''}
               onClick={handlePagar}
             />
             <Button
@@ -344,7 +333,7 @@ setPlantoes(withNomes);
                 { label: 'Funcionário', value: selected.funcionario },
                 { label: 'Início', value: formatDate(selected.periodo.Inicio) },
                 { label: 'Fim', value: formatDate(selected.periodo.Fim) },
-                { label: 'Status', value: statusLabel[selected.status] ?? selected.status },
+                { label: 'Status', value: statusLabel(selected.status) },
                 { label: 'Valor Total', value: selected.valor_total != null ? `R$ ${selected.valor_total.toFixed(2)}` : '—' },
                 { label: 'Observações', value: selected.observacoes || '—' },
               ].map(({ label, value }, i) => (
