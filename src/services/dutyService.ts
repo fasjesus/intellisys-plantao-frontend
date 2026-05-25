@@ -46,7 +46,7 @@ export const dutyService = {
     return response.data;
   },
 
-  updateStatus: async (id: string, newStatus: string, observacoes?: string): Promise<void> => {
+  updateStatus: async (id: string, newStatus: string | number, observacoes?: string): Promise<void> => {
     await api.patch(`/plantoes/${id}/status`, { new_status: newStatus, observacoes });
   },
 

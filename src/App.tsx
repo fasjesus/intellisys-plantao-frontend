@@ -1,6 +1,7 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { AppLayout } from './layouts/AppLayout';
+import { AdminRoute } from './components/ProtectedRoute';
 import { Login } from './pages/Login';
 import { Home } from './pages/Home';
 import { Month } from './pages/Scale/Month';
@@ -32,18 +33,18 @@ export function App() {
 
       {/* Telas com AppLayout */}
       <Route element={<AppLayout />}>
-        <Route path="/scale/month" element={<Month />} />
-        <Route path="/scale/suggestion" element={<Suggestion />} />
-        <Route path="/users" element={<UsersAll />} />
-        <Route path="/users/permissions" element={<Permissions />} />
-        <Route path="/users/details/:id" element={<Details />} />
-        <Route path="/users/edit/:id" element={<Edit />} />
-        <Route path="/users/duty-history/:id" element={<DutyHistory />} />
-        <Route path="/users/create" element={<Create />} />
-        <Route path="/convites" element={<Convites />} />
-        <Route path="/modelo-comunicacao" element={<ModeloComunicacao />} />
-        <Route path="/reports" element={<Reports />} />
-        <Route path="/duty" element={<Duty />} />
+        <Route path="/scale/month" element={<AdminRoute><Month /></AdminRoute>} />
+        <Route path="/scale/suggestion" element={<AdminRoute><Suggestion /></AdminRoute>} />
+        <Route path="/users" element={<AdminRoute><UsersAll /></AdminRoute>} />
+        <Route path="/users/permissions" element={<AdminRoute><Permissions /></AdminRoute>} />
+        <Route path="/users/details/:id" element={<AdminRoute><Details /></AdminRoute>} />
+        <Route path="/users/edit/:id" element={<AdminRoute><Edit /></AdminRoute>} />
+        <Route path="/users/duty-history/:id" element={<AdminRoute><DutyHistory /></AdminRoute>} />
+        <Route path="/users/create" element={<AdminRoute><Create /></AdminRoute>} />
+        <Route path="/convites" element={<AdminRoute><Convites /></AdminRoute>} />
+        <Route path="/modelo-comunicacao" element={<AdminRoute><ModeloComunicacao /></AdminRoute>} />
+        <Route path="/reports" element={<AdminRoute><Reports /></AdminRoute>} />
+        <Route path="/duty" element={<AdminRoute><Duty /></AdminRoute>} />
       </Route>
 
       {/* Rota de erro 404 */}

@@ -6,6 +6,19 @@ const NUM_TO_KEY: Record<string, string> = {
   '4': 'PAGO',
 };
 
+const KEY_TO_NUM: Record<string, string> = {
+  AGENDADO: '0',
+  EM_ANDAMENTO: '1',
+  CONCLUIDO: '2',
+  CANCELADO: '3',
+  PAGO: '4',
+};
+
+export function statusToApiValue(status: string): string {
+  const key = normalizeStatus(status);
+  return KEY_TO_NUM[key] ?? key;
+}
+
 const LABELS: Record<string, string> = {
   AGENDADO: 'Agendado',
   EM_ANDAMENTO: 'Em andamento',

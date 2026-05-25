@@ -8,7 +8,7 @@ import { AppHeader } from '../components/AppHeader';
 import { motion } from 'framer-motion';
 import { authService } from '../services/authService';
 import { dutyService, type Duty } from '../services/dutyService';
-import { statusLabel, statusClass, isStatusAtivo, normalizeStatus } from '../utils/dutyStatus';
+import { statusLabel, statusClass, isStatusAtivo, normalizeStatus, statusToApiValue } from '../utils/dutyStatus';
 
 const formatDate = (iso: string) => {
   if (!iso) return '—';
@@ -67,15 +67,15 @@ export function Home() {
 
   const handleConcluir = async () => {
     if (!selected) return;
-    const novoStatus = isStatusAtivo(selected.status) && normalizeStatus(selected.status) === 'AGENDADO' ? 'EM_ANDAMENTO' : 'CONCLUIDO';
+    const novoStatus = normalizeStatus(selected.status) === 'AGENDADO' ? 'EM_ANDAMENTO' : 'CONCLUIDO';
     setConcluding(true);
     try {
-      await dutyService.updateStatus(selected.id, novoStatus, observacoes);
+      await dutyService.updateStatus(selected.id, statusToApiValue(novoStatus), observacoes);
       setPlantoes(prev => prev.map(x => x.id === selected.id ? { ...x, status: novoStatus } : x));
       setSelected(prev => prev ? { ...prev, status: novoStatus } : null);
       setObservacoes('');
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Erro ao atualizar plantão. Tente novamente.');
+      alert(err?.response?.data?.error || err?.response?.data?.message || 'Erro ao atualizar plantão. Tente novamente.');
     } finally {
       setConcluding(false);
     }

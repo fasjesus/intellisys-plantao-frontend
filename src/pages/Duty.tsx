@@ -5,7 +5,7 @@ import { SearchBar } from '../components/SearchBar';
 import { Button } from '../components/Button';
 import { dutyService, type Duty } from '../services/dutyService';
 import { collaboratorService, type Collaborator } from '../services/collaboratorService';
-import { statusLabel, statusClass, normalizeStatus } from '../utils/dutyStatus';
+import { statusLabel, statusClass, normalizeStatus, statusToApiValue } from '../utils/dutyStatus';
 
 interface DutyWithNome extends Duty {
   funcionario: string;
@@ -133,7 +133,7 @@ setPlantoes(withNomes);
       setPlantoes(prev => prev.filter(p => p.id !== selected.id));
       setSelected(null);
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Erro ao deletar plantão.');
+      alert(err?.response?.data?.error || err?.response?.data?.message || 'Erro ao deletar plantão.');
     } finally {
       setDeleting(false);
     }
@@ -144,11 +144,11 @@ setPlantoes(withNomes);
     if (!confirm(`Marcar plantão de ${selected.funcionario} como pago?`)) return;
     setPaying(true);
     try {
-      await dutyService.updateStatus(selected.id, 'PAGO');
+      await dutyService.updateStatus(selected.id, statusToApiValue('PAGO'));
       setPlantoes(prev => prev.map(p => p.id === selected.id ? { ...p, status: 'PAGO' } : p));
       setSelected(prev => prev ? { ...prev, status: 'PAGO' } : null);
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Erro ao pagar plantão.');
+      alert(err?.response?.data?.error || err?.response?.data?.message || 'Erro ao pagar plantão.');
     } finally {
       setPaying(false);
     }
