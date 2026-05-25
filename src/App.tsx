@@ -16,6 +16,7 @@ import { Cadastro } from './pages/Cadastro';
 import { Permissions } from './pages/Users/Permissions';
 import { DutyHistory } from './pages/Users/DutyHistory';
 import { ReportPrint } from './pages/ReportPrint';
+import { Convites } from './pages/Convites';
 
 export function App() {
   const location = useLocation();
@@ -39,6 +40,7 @@ export function App() {
         <Route path="/users/edit/:id" element={<Edit />} />
         <Route path="/users/duty-history/:id" element={<DutyHistory />} />
         <Route path="/users/create" element={<Create />} />
+        <Route path="/convites" element={<Convites />} />
         <Route path="/modelo-comunicacao" element={<ModeloComunicacao />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/duty" element={<Duty />} />

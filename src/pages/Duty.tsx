@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
-import { AlertCircle, Info, Plus, Loader2, X, Trash2 } from 'lucide-react';
+import { AlertCircle, Info, Plus, Loader2, X, Trash2, CircleDollarSign } from 'lucide-react';
 import { SearchBar } from '../components/SearchBar';
 import { Button } from '../components/Button';
 import { dutyService, type Duty } from '../services/dutyService';
@@ -31,6 +31,7 @@ export function Duty() {
   const [saving, setSaving] = useState(false);
   const [selected, setSelected] = useState<DutyWithNome | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [paying, setPaying] = useState(false);
   const [showDetalhes, setShowDetalhes] = useState(false);
   const [form, setForm] = useState<CreateForm>({
     colaborador_id: '',
@@ -134,6 +135,21 @@ setPlantoes(withNomes);
       alert(err?.response?.data?.message || 'Erro ao deletar plantão.');
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handlePagar = async () => {
+    if (!selected) return;
+    if (!confirm(`Marcar plantão de ${selected.funcionario} como pago?`)) return;
+    setPaying(true);
+    try {
+      await dutyService.updateStatus(selected.id, 'APROVADO');
+      setPlantoes(prev => prev.map(p => p.id === selected.id ? { ...p, status: 'APROVADO' } : p));
+      setSelected(prev => prev ? { ...prev, status: 'APROVADO' } : null);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Erro ao pagar plantão.');
+    } finally {
+      setPaying(false);
     }
   };
 
@@ -279,6 +295,13 @@ setPlantoes(withNomes);
               disabled={!selected}
               className={!selected ? 'opacity-30 cursor-not-allowed' : ''}
               onClick={() => selected && setShowDetalhes(true)}
+            />
+            <Button
+              label={paying ? 'Pagando...' : 'Pagar'}
+              icon={paying ? <Loader2 size={14} className="animate-spin" /> : <CircleDollarSign size={14} />}
+              disabled={!selected || paying || selected?.status === 'APROVADO' || selected?.status === '1'}
+              className={(!selected || selected?.status === 'APROVADO' || selected?.status === '1') ? 'opacity-30 cursor-not-allowed' : ''}
+              onClick={handlePagar}
             />
             <Button
               label={deleting ? 'Deletando...' : 'Deletar'}
