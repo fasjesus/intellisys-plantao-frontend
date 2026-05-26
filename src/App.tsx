@@ -18,6 +18,7 @@ import { Permissions } from './pages/Users/Permissions';
 import { DutyHistory } from './pages/Users/DutyHistory';
 import { ReportPrint } from './pages/ReportPrint';
 import { Convites } from './pages/Convites';
+import { Financeiro } from './pages/Financeiro';
 
 export function App() {
   const location = useLocation();
@@ -42,6 +43,7 @@ export function App() {
         <Route path="/users/duty-history/:id" element={<AdminRoute><DutyHistory /></AdminRoute>} />
         <Route path="/users/create" element={<AdminRoute><Create /></AdminRoute>} />
         <Route path="/convites" element={<AdminRoute><Convites /></AdminRoute>} />
+        <Route path="/financeiro" element={<AdminRoute><Financeiro /></AdminRoute>} />
         <Route path="/modelo-comunicacao" element={<AdminRoute><ModeloComunicacao /></AdminRoute>} />
         <Route path="/reports" element={<AdminRoute><Reports /></AdminRoute>} />
         <Route path="/duty" element={<AdminRoute><Duty /></AdminRoute>} />
