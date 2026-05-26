@@ -3,19 +3,23 @@ import { Loader2, Save, Plus, Pencil, X, FileText } from 'lucide-react';
 import { Button } from '../components/Button';
 import api from '../services/api';
 
+// 1. ADICIONADO 'ativo' NA INTERFACE
 interface Modelo {
   id: string;
   nome: string;
   tipo_comunicacao: string;
   assunto: string;
   corpo: string;
+  ativo: string; 
 }
 
+// 2. ADICIONADO 'ativo' COM VALOR PADRÃO
 const emptyForm = {
   nome: '',
-  tipo_comunicacao: 'PlantaoAgendado',
+  tipo_comunicacao: 'Plantão Agendado',
   assunto: '',
   corpo: '',
+  ativo: 'true', // Ajuste para 'ativo' ou true se o back exigir diferente
 };
 
 export function ModeloComunicacao() {
@@ -51,9 +55,16 @@ export function ModeloComunicacao() {
     setShowForm(true);
   };
 
+  // 3. ATUALIZADO PARA CAPTURAR O STATUS ATUAL NA EDIÇÃO
   const openEdit = (m: Modelo) => {
     setEditingId(m.id);
-    setFormData({ nome: m.nome, tipo_comunicacao: m.tipo_comunicacao, assunto: m.assunto, corpo: m.corpo });
+    setFormData({ 
+      nome: m.nome, 
+      tipo_comunicacao: m.tipo_comunicacao, 
+      assunto: m.assunto, 
+      corpo: m.corpo,
+      ativo: m.ativo || 'true' // Passando o status atual para o formData
+    });
     setShowForm(true);
     setSelected(null);
   };
@@ -63,9 +74,14 @@ export function ModeloComunicacao() {
     setSaving(true);
     try {
       if (editingId) {
+        // Aqui o formData já vai incluir o { ativo: "..." } exigido pelo UpdateRequestDTO
         await api.put(`/auth/admin/modelo-comunicacao/${editingId}`, formData);
       } else {
-        await api.post('/auth/admin/modelo-comunicacao/', formData);
+        // Na Criação (POST), o DTO NÃO possui o campo 'ativo'. Vamos removê-lo:
+        const dataToPost = { ...formData };
+        delete (dataToPost as any).ativo; // Remove o campo para não quebrar o binding do Go
+
+        await api.post('/auth/admin/modelo-comunicacao/', dataToPost);
       }
       setShowForm(false);
       setEditingId(null);
@@ -186,7 +202,7 @@ export function ModeloComunicacao() {
                   className="w-full h-11 px-4 rounded-xl border border-gray-200 text-sm font-bold text-gray-700 focus:border-[#B5071A] outline-none transition-all cursor-pointer"
                 >
                   <option value="PlantaoAgendado">Plantão Agendado</option>
-                  <option value="PlantaoConcluido">Plantão Concluído</option>
+                  <option value="Plantão Concluido">Plantão Concluído</option>
                   <option value="PlantaoAindaAberto">Plantão Ainda Aberto</option>
                   <option value="PlantaoPago">Plantão Pago</option>
                   <option value="ColaboradorCadastrado">Colaborador Cadastrado</option>
@@ -198,6 +214,23 @@ export function ModeloComunicacao() {
                   <option value="UsuarioDeletado">Usuário Deletado</option>
                 </select>
               </div>
+
+              {/* OPCIONAL: SE QUISER ADICIONAR UM INPUT/SELECT PARA ATIVAR/DESATIVAR NO FORMULÁRIO DE EDIÇÃO */}
+              {editingId && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] text-gray-400 font-bold uppercase ml-1">Status</label>
+                  <select
+                    name="ativo"
+                    value={formData.ativo}
+                    onChange={handleChange}
+                    className="w-full h-11 px-4 rounded-xl border border-gray-200 text-sm font-bold text-gray-700 focus:border-[#B5071A] outline-none transition-all cursor-pointer"
+                  >
+                    <option value="true">Ativo</option>
+                    <option value="false">Inativo</option>
+                  </select>
+                </div>
+              )}
+
               <div className="flex flex-col gap-1">
                 <label className="text-[10px] text-gray-400 font-bold uppercase ml-1">Assunto</label>
                 <input
@@ -213,7 +246,7 @@ export function ModeloComunicacao() {
               <div className="flex flex-col gap-1">
                 <label className="text-[10px] text-gray-400 font-bold uppercase ml-1">
                   Corpo do E-mail
-                  <span className="ml-2 text-gray-300 normal-case font-normal">{'{{.Nome}}'} {'{{.Email}}'} {'{{.DataInicio}}'} {'{{.DataFim}}'} {'{{.ValorPago}}'} {'{{.Link}}'}</span>
+                  <span className="ml-2 text-gray-300 normal-case font-normal">{'{{.nome}}'} {'{{.email}}'} {'{{.dataInicio}}'} {'{{.dataFim}}'} {'{{.valorPago}}'} {'{{.Link}}'}</span>
                 </label>
                 <textarea
                   name="corpo"
@@ -221,7 +254,7 @@ export function ModeloComunicacao() {
                   value={formData.corpo}
                   onChange={handleChange}
                   rows={8}
-                  placeholder="Olá {{.Nome}}, seu acesso foi criado..."
+                  placeholder="Olá {{.nome}}, seu acesso foi criado..."
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-700 focus:border-[#B5071A] outline-none transition-all resize-none"
                 />
               </div>
