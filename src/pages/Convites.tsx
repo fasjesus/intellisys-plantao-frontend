@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Trash2, RefreshCw, Mail, Clock, CheckCircle } from 'lucide-react';
+import { Loader2, Trash2, RefreshCw, Mail, Clock, CheckCircle, RotateCcw } from 'lucide-react';
 import { conviteService, type Convite } from '../services/conviteService';
 import { collaboratorService } from '../services/collaboratorService';
 import { Button } from '../components/Button';
 
 interface ConviteRow extends Convite {
   nomeColaborador: string;
+  emailColaborador: string;
 }
 
 const formatDate = (iso: string) => {
@@ -20,6 +21,7 @@ export function Convites() {
   const [convites, setConvites] = useState<ConviteRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [revoking, setRevoking] = useState<string | null>(null);
+  const [resending, setResending] = useState<string | null>(null);
   const [selected, setSelected] = useState<ConviteRow | null>(null);
 
   async function load() {
@@ -29,11 +31,12 @@ export function Convites() {
         conviteService.listar(),
         collaboratorService.getAll(),
       ]);
-      const colabMap: Record<string, string> = {};
-      colaboradores.forEach(c => { colabMap[c.id] = c.nome; });
+      const colabMap: Record<string, { nome: string; email: string }> = {};
+      colaboradores.forEach(c => { colabMap[c.id] = { nome: c.nome, email: c.email }; });
       setConvites(lista.map(cv => ({
         ...cv,
-        nomeColaborador: colabMap[cv.id_colaborador] ?? '—',
+        nomeColaborador: colabMap[cv.id_colaborador]?.nome ?? '—',
+        emailColaborador: colabMap[cv.id_colaborador]?.email ?? '',
       })));
     } catch {
       alert('Erro ao carregar convites.');
@@ -52,9 +55,24 @@ export function Convites() {
       setConvites(prev => prev.filter(c => c.token !== cv.token));
       if (selected?.token === cv.token) setSelected(null);
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Erro ao revogar convite.');
+      alert(err?.response?.data?.error || err?.response?.data?.message || 'Erro ao revogar convite.');
     } finally {
       setRevoking(null);
+    }
+  };
+
+  const handleReenviar = async (cv: ConviteRow) => {
+    if (!confirm(`Reenviar convite para ${cv.nomeColaborador}?`)) return;
+    setResending(cv.token);
+    try {
+      await conviteService.deletar(cv.token);
+      await conviteService.criar(cv.id_colaborador, cv.emailColaborador, cv.nomeColaborador);
+      await load();
+      setSelected(null);
+    } catch (err: any) {
+      alert(err?.response?.data?.error || err?.response?.data?.message || 'Erro ao reenviar convite.');
+    } finally {
+      setResending(null);
     }
   };
 
@@ -177,12 +195,20 @@ export function Convites() {
         )}
 
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 md:relative md:border-none md:p-0 md:mt-4 md:flex md:justify-end md:gap-3">
-          <div className="grid grid-cols-3 gap-2 md:flex md:gap-3">
+          <div className="grid grid-cols-2 gap-2 md:flex md:gap-3">
             <Button
               label="Atualizar"
               variant="secondary"
               icon={<RefreshCw size={14} />}
               onClick={load}
+            />
+            <Button
+              label={resending ? 'Reenviando...' : 'Reenviar'}
+              icon={resending ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
+              variant="secondary"
+              disabled={!selected || !!resending || !!revoking || selected?.usado}
+              className={(!selected || selected?.usado) ? 'opacity-30 cursor-not-allowed' : ''}
+              onClick={() => selected && handleReenviar(selected)}
             />
             <Button
               label={revoking ? 'Revogando...' : 'Revogar'}

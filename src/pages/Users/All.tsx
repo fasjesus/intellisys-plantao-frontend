@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Activity, Loader2, UserPlus, ShieldCheck, Mail } from 'lucide-react';
+import { Activity, Loader2, UserPlus, ShieldCheck, Mail, Trash2 } from 'lucide-react';
 import { Button } from '../../components/Button';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { SearchBar } from '../../components/SearchBar';
@@ -15,6 +15,7 @@ export function All() {
   const [selected, setSelected] = useState<Collaborator | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
   const { searchTerm, setSearchTerm } = useOutletContext<{
@@ -77,6 +78,21 @@ export function All() {
 
   const selectedTemUsuario = selected ? colabsComUsuario.has(selected.id) : false;
   const canCreateUser = isAdmin && selected !== null && !selectedTemUsuario;
+
+  const handleDelete = async () => {
+    if (!selected) return;
+    if (!confirm(`Excluir colaborador ${selected.nome}? Esta ação não pode ser desfeita.`)) return;
+    setDeleting(true);
+    try {
+      await collaboratorService.delete(selected.id);
+      setCollaborators(prev => prev.filter(c => c.id !== selected.id));
+      setSelected(null);
+    } catch (err: any) {
+      alert(err?.response?.data?.error || err?.response?.data?.message || 'Erro ao excluir colaborador.');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   if (!loading && !isAdmin) {
     return (
@@ -228,6 +244,16 @@ export function All() {
               onClick={() => selected && navigate(`/users/edit/${selected.id}`)}
               className={!selected ? 'opacity-30 cursor-not-allowed' : ''}
             />
+            {isAdmin && (
+              <Button
+                label={deleting ? 'Excluindo...' : 'Excluir'}
+                icon={deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                variant="secondary"
+                disabled={!selected || deleting}
+                className={!selected ? 'opacity-30 cursor-not-allowed' : ''}
+                onClick={handleDelete}
+              />
+            )}
             <Button label="Voltar" variant="secondary" onClick={() => navigate('/home')} />
           </div>
         </div>

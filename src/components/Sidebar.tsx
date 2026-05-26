@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Users, Clock, Calendar, FileText, ChevronRight, LogOut, Mail, MessageSquare, DollarSign } from 'lucide-react';
+import { Users, Clock, Calendar, FileText, ChevronRight, LogOut, Mail, MessageSquare, DollarSign, Briefcase, UserCog } from 'lucide-react';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -44,9 +44,17 @@ const sections: Section[] = [
     title: 'Administração',
     adminOnly: true,
     items: [
-      { label: 'Convites',      path: '/convites',            icon: Mail,         adminOnly: true },
+      { label: 'Convites',       path: '/convites',            icon: Mail,          adminOnly: true },
       { label: 'Modelos E-mail', path: '/modelo-comunicacao', icon: MessageSquare, adminOnly: true },
-      { label: 'Financeiro',     path: '/financeiro',         icon: DollarSign,   adminOnly: true },
+      { label: 'Financeiro',     path: '/financeiro',         icon: DollarSign,    adminOnly: true },
+      { label: 'Cargos/Setores', path: '/cargos-setores',     icon: Briefcase,     adminOnly: true },
+    ],
+  },
+  {
+    title: 'Conta',
+    adminOnly: false,
+    items: [
+      { label: 'Meu Perfil', path: '/perfil', icon: UserCog, adminOnly: false },
     ],
   },
 ];
