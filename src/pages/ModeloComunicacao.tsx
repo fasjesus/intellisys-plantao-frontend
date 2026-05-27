@@ -16,7 +16,7 @@ interface Modelo {
 // 2. ADICIONADO 'ativo' COM VALOR PADRÃO
 const emptyForm = {
   nome: '',
-  tipo_comunicacao: 'Plantão Agendado',
+  tipo_comunicacao: ' ',
   assunto: '',
   corpo: '',
   ativo: 'true', // Ajuste para 'ativo' ou true se o back exigir diferente
@@ -201,17 +201,17 @@ export function ModeloComunicacao() {
                   onChange={handleChange}
                   className="w-full h-11 px-4 rounded-xl border border-gray-200 text-sm font-bold text-gray-700 focus:border-[#B5071A] outline-none transition-all cursor-pointer"
                 >
-                  <option value="PlantaoAgendado">Plantão Agendado</option>
+                  <option value="Plantão Agendado">Plantão Agendado</option>
                   <option value="Plantão Concluido">Plantão Concluído</option>
-                  <option value="PlantaoAindaAberto">Plantão Ainda Aberto</option>
-                  <option value="PlantaoPago">Plantão Pago</option>
-                  <option value="ColaboradorCadastrado">Colaborador Cadastrado</option>
-                  <option value="ColaboradorAtualizado">Colaborador Atualizado</option>
-                  <option value="ColaboradorDeletado">Colaborador Deletado</option>
-                  <option value="UsuarioCadastrado">Usuário Cadastrado</option>
-                  <option value="EmailAtualizado">Email Atualizado</option>
-                  <option value="SenhaAtualizada">Senha Atualizada</option>
-                  <option value="UsuarioDeletado">Usuário Deletado</option>
+                  <option value="Plantão Ainda Está Aberto">Plantão Ainda Está Aberto</option>
+                  <option value="Plantão Pago">Plantão Pago</option>
+                  <option value="Colaborador Cadastrado">Colaborador Cadastrado</option>
+                  <option value="Colaborador Atualizado">Colaborador Atualizado</option>
+                  <option value="Colaborador Deletado">Colaborador Deletado</option>
+                  <option value="Usuário Cadastrado">Usuário Cadastrado</option>
+                  <option value="Email do Usuário Atualizado">Email do Usuário Atualizado</option>
+                  <option value="Senha do Usuário Atualizada">Senha do Usuário Atualizada</option>
+                  <option value="Usuário Deletado">Usuário Deletado</option>
                 </select>
               </div>
 
