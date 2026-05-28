@@ -217,19 +217,34 @@ for (const p of (Array.isArray(plantoes) ? plantoes : [])) {
       </div>
 
       {/* BOTÕES */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 md:relative md:border-none md:p-0 md:mt-4 md:flex md:justify-end">
-        <div className="grid grid-cols-3 gap-2 md:flex md:gap-3">
-          <button
-            onClick={() => {
-              const start = `${year}-${String(month + 1).padStart(2, '0')}-01`;
-              const lastDay = new Date(year, month + 1, 0).getDate();
-              const end = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-              navigate(`/reports?start=${start}&end=${end}`);
-            }}
-            className="bg-[#B5071A] text-white py-3 md:px-8 md:py-2.5 rounded-xl font-bold text-[10px] md:text-xs shadow-md active:scale-95 transition-all"
-          >Relatório</button>
-          <button onClick={() => navigate('/scale/suggestion')} className="bg-[#B5071A] text-white py-3 md:px-8 md:py-2.5 rounded-xl font-bold text-[10px] md:text-xs shadow-md active:scale-95 transition-all">Sugestão</button>
-          <button onClick={() => navigate('/home')} className="bg-[#1E293B] text-white py-3 md:px-8 md:py-2.5 rounded-xl font-bold text-[10px] md:text-xs shadow-md active:scale-95 transition-all">Voltar</button>
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 z-10 md:relative md:border-none md:p-0 md:mt-4">
+
+        <div className="max-w-5xl mx-auto w-full md:flex md:justify-end">
+          <div className="grid grid-cols-3 gap-2 md:flex md:gap-3 w-full md:w-auto">
+            <button
+              onClick={() => {
+                const start = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+                const lastDay = new Date(year, month + 1, 0).getDate();
+                const end = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+                navigate(`/reports?start=${start}&end=${end}`);
+              }}
+              className="bg-[#B5071A] text-white py-3 md:px-8 md:py-2.5 rounded-xl font-bold text-[10px] md:text-xs shadow-md active:scale-95 transition-all"
+            >
+              Relatório
+            </button>
+            <button 
+              onClick={() => navigate('/scale/suggestion')} 
+              className="bg-[#B5071A] text-white py-3 md:px-8 md:py-2.5 rounded-xl font-bold text-[10px] md:text-xs shadow-md active:scale-95 transition-all"
+            >
+              Sugestão
+            </button>
+            <button 
+              onClick={() => navigate('/home')} 
+              className="bg-[#1E293B] text-white py-3 md:px-8 md:py-2.5 rounded-xl font-bold text-[10px] md:text-xs shadow-md active:scale-95 transition-all"
+            >
+              Voltar
+            </button>
+          </div>
         </div>
       </div>
 
