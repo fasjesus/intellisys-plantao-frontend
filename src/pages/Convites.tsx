@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Trash2, RefreshCw, Mail, Clock, CheckCircle, RotateCcw } from 'lucide-react';
+import { Loader2, Trash2, RefreshCw, Mail, Clock, CheckCircle, RotateCcw, Plus, X } from 'lucide-react';
 import { conviteService, type Convite } from '../services/conviteService';
-import { collaboratorService } from '../services/collaboratorService';
+import { collaboratorService, type Collaborator } from '../services/collaboratorService';
 import { Button } from '../components/Button';
 
 interface ConviteRow extends Convite {
@@ -19,20 +19,31 @@ const formatDate = (iso: string) => {
 export function Convites() {
   const navigate = useNavigate();
   const [convites, setConvites] = useState<ConviteRow[]>([]);
+  const [colaboradores, setColaboradores] = useState<Collaborator[]>([]); // Armazena a lista para o novo convite
   const [loading, setLoading] = useState(true);
   const [revoking, setRevoking] = useState<string | null>(null);
   const [resending, setResending] = useState<string | null>(null);
+  const [sending, setSending] = useState(false); // Estado de loading do novo convite
   const [selected, setSelected] = useState<ConviteRow | null>(null);
+  
+  // Estados para controle do formulário de envio
+  const [showForm, setShowForm] = useState(false);
+  const [selectedColabId, setSelectedColabId] = useState('');
 
   async function load() {
     setLoading(true);
     try {
-      const [lista, colaboradores] = await Promise.all([
+      const [lista, listaColaboradores] = await Promise.all([
         conviteService.listar(),
         collaboratorService.getAll(),
       ]);
+      
+      // Filtra apenas colaboradores ativos para poder enviar novos convites
+      setColaboradores(listaColaboradores.filter(c => c.status === 'ativo'));
+
       const colabMap: Record<string, { nome: string; email: string }> = {};
-      colaboradores.forEach(c => { colabMap[c.id] = { nome: c.nome, email: c.email }; });
+      listaColaboradores.forEach(c => { colabMap[c.id] = { nome: c.nome, email: c.email }; });
+      
       setConvites(lista.map(cv => ({
         ...cv,
         nomeColaborador: colabMap[cv.id_colaborador]?.nome ?? '—',
@@ -76,6 +87,28 @@ export function Convites() {
     }
   };
 
+  // Função para processar o envio do novo convite
+  const handleEnviarConvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedColabId) return;
+
+    const colab = colaboradores.find(c => c.id === selectedColabId);
+    if (!colab) return;
+
+    setSending(true);
+    try {
+      await conviteService.criar(colab.id, colab.email, colab.nome);
+      alert('Convite enviado com sucesso!');
+      setShowForm(false);
+      setSelectedColabId('');
+      await load();
+    } catch (err: any) {
+      alert(err?.response?.data?.error || err?.response?.data?.message || 'Erro ao enviar convite.');
+    } finally {
+      setSending(false);
+    }
+  };
+
   return (
     <div className="p-4 md:p-12 bg-white min-h-full font-inter flex flex-col">
 
@@ -92,11 +125,49 @@ export function Convites() {
             <Loader2 size={32} className="text-[#B5071A] animate-spin" />
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Carregando convites...</p>
           </div>
+        ) : showForm ? (
+          /* FORMULÁRIO PARA ENVIAR CONVITE */
+          <div className="max-w-md mx-auto w-full border border-gray-100 rounded-2xl p-6 shadow-sm bg-gray-50">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xs font-bold text-gray-700 uppercase tracking-widest">Enviar Convite</h3>
+              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleEnviarConvite} className="space-y-5">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] text-gray-400 font-bold uppercase ml-1">Colaborador</label>
+                <select
+                  required
+                  value={selectedColabId}
+                  onChange={e => setSelectedColabId(e.target.value)}
+                  className="w-full h-11 px-4 rounded-xl border border-gray-200 text-sm font-bold text-gray-700 focus:border-[#B5071A] outline-none bg-white cursor-pointer transition-all"
+                >
+                  <option value="">Selecione um colaborador...</option>
+                  {colaboradores.map(c => (
+                    <option key={c.id} value={c.id}>{c.nome} ({c.email})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <Button type="button" variant="secondary" label="Cancelar" onClick={() => setShowForm(false)} />
+                <Button 
+                  type="submit" 
+                  disabled={sending || !selectedColabId}
+                  icon={sending ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
+                  label={sending ? 'Enviando...' : 'Enviar'} 
+                />
+              </div>
+            </form>
+          </div>
         ) : convites.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
             <Mail size={40} className="text-gray-200" />
             <p className="text-gray-500 font-bold text-sm">Nenhum convite encontrado.</p>
-            <p className="text-gray-400 text-xs">Os convites enviados aparecerão aqui.</p>
+            <p className="text-gray-400 text-xs mb-4">Os convites enviados aparecerão aqui.</p>
+            <Button label="Enviar Convite" icon={<Plus size={14} />} onClick={() => setShowForm(true)} />
           </div>
         ) : (
           <>
@@ -194,32 +265,40 @@ export function Convites() {
           </>
         )}
 
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 md:relative md:border-none md:p-0 md:mt-4 md:flex md:justify-end md:gap-3">
-          <div className="grid grid-cols-2 gap-2 md:flex md:gap-3">
-            <Button
-              label="Atualizar"
-              variant="secondary"
-              icon={<RefreshCw size={14} />}
-              onClick={load}
-            />
-            <Button
-              label={resending ? 'Reenviando...' : 'Reenviar'}
-              icon={resending ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
-              variant="secondary"
-              disabled={!selected || !!resending || !!revoking || selected?.usado}
-              className={(!selected || selected?.usado) ? 'opacity-30 cursor-not-allowed' : ''}
-              onClick={() => selected && handleReenviar(selected)}
-            />
-            <Button
-              label={revoking ? 'Revogando...' : 'Revogar'}
-              icon={revoking ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-              disabled={!selected || !!revoking || selected?.usado}
-              className={!selected || selected?.usado ? 'opacity-30 cursor-not-allowed' : ''}
-              onClick={() => selected && handleRevogar(selected)}
-            />
-            <Button label="Voltar" variant="secondary" onClick={() => navigate('/users')} />
+        {/* BARRA DE AÇÕES INFERIOR */}
+        {!showForm && (
+          <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 md:relative md:border-none md:p-0 md:mt-4 md:flex md:justify-end md:gap-3">
+            <div className="grid grid-cols-2 gap-2 md:flex md:gap-3">
+              <Button
+                label="Enviar Convite"
+                icon={<Plus size={14} />}
+                onClick={() => setShowForm(true)}
+              />
+              <Button
+                label="Atualizar"
+                variant="secondary"
+                icon={<RefreshCw size={14} />}
+                onClick={load}
+              />
+              <Button
+                label={resending ? 'Reenviando...' : 'Reenviar'}
+                icon={resending ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
+                variant="secondary"
+                disabled={!selected || !!resending || !!revoking || selected?.usado}
+                className={(!selected || selected?.usado) ? 'opacity-30 cursor-not-allowed' : ''}
+                onClick={() => selected && handleReenviar(selected)}
+              />
+              <Button
+                label={revoking ? 'Revogando...' : 'Revogar'}
+                icon={revoking ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                disabled={!selected || !!revoking || selected?.usado}
+                className={!selected || selected?.usado ? 'opacity-30 cursor-not-allowed' : ''}
+                onClick={() => selected && handleRevogar(selected)}
+              />
+              <Button label="Voltar" variant="secondary" onClick={() => navigate('/users')} />
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <style>{`
