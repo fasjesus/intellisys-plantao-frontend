@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { AlertCircle, Info, Plus, Loader2, X, Trash2, CircleDollarSign } from 'lucide-react';
 import { SearchBar } from '../components/SearchBar';
@@ -16,6 +17,25 @@ interface CreateForm {
   inicio: string;
   fim: string;
 }
+
+const getApiErrorMessage = (
+  error: unknown,
+  fallback: string,
+  keys: Array<'error' | 'message'> = ['error', 'message']
+) => {
+  if (!axios.isAxiosError(error)) return fallback;
+
+  const data = error.response?.data;
+  if (!data || typeof data !== 'object') return fallback;
+
+  const record = data as Partial<Record<'error' | 'message', unknown>>;
+  for (const key of keys) {
+    const message = record[key];
+    if (typeof message === 'string') return message;
+  }
+
+  return fallback;
+};
 
 export function Duty() {
   const navigate = useNavigate();
@@ -88,6 +108,11 @@ setPlantoes(withNomes);
       alert('A data de fim deve ser posterior ao início.');
       return;
     }
+    const selectedColaborador = colaboradores.find(c => c.id === form.colaborador_id);
+    if (!selectedColaborador || selectedColaborador.ativo_plantao !== 'ativo') {
+      alert('Este colaborador está indisponível para plantão.');
+      return;
+    }
     setSaving(true);
     try {
       await dutyService.create({
@@ -116,9 +141,8 @@ setPlantoes(withNomes);
         })
       );
       setPlantoes(withNomes);
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || 'Erro ao criar plantão. Verifique os dados.';
-      alert(msg);
+    } catch (err: unknown) {
+      alert(getApiErrorMessage(err, 'Erro ao criar plantão. Verifique os dados.', ['message']));
     } finally {
       setSaving(false);
     }
@@ -132,8 +156,8 @@ setPlantoes(withNomes);
       await dutyService.delete(selected.id);
       setPlantoes(prev => prev.filter(p => p.id !== selected.id));
       setSelected(null);
-    } catch (err: any) {
-      alert(err?.response?.data?.error || err?.response?.data?.message || 'Erro ao deletar plantão.');
+    } catch (err: unknown) {
+      alert(getApiErrorMessage(err, 'Erro ao deletar plantão.'));
     } finally {
       setDeleting(false);
     }
@@ -147,8 +171,8 @@ setPlantoes(withNomes);
       await dutyService.updateStatus(selected.id, statusToApiValue('PAGO'));
       setPlantoes(prev => prev.map(p => p.id === selected.id ? { ...p, status: 'PAGO' } : p));
       setSelected(prev => prev ? { ...prev, status: 'PAGO' } : null);
-    } catch (err: any) {
-      alert(err?.response?.data?.error || err?.response?.data?.message || 'Erro ao pagar plantão.');
+    } catch (err: unknown) {
+      alert(getApiErrorMessage(err, 'Erro ao pagar plantão.'));
     } finally {
       setPaying(false);
     }
@@ -165,6 +189,7 @@ setPlantoes(withNomes);
     p.funcionario.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.id.includes(searchTerm)
   );
+  const colaboradoresDisponiveis = colaboradores.filter(c => c.ativo_plantao === 'ativo');
 
   if (loading) {
     return (
@@ -378,7 +403,7 @@ setPlantoes(withNomes);
                   className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-[#B5071A] transition-colors bg-white"
                 >
                   <option value="">Selecione...</option>
-                  {colaboradores.map(c => (
+                  {colaboradoresDisponiveis.map(c => (
                     <option key={c.id} value={c.id}>{c.nome}</option>
                   ))}
                 </select>
