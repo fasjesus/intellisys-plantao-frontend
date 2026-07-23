@@ -1,4 +1,5 @@
 import api from './api';
+import axios from 'axios';
 
 export interface Duty {
   id: string;
@@ -24,8 +25,15 @@ export const dutyService = {
   },
 
   getByColaborador: async (colaboradorId: string): Promise<Duty[]> => {
-    const response = await api.get(`/plantoes/colaborador/${colaboradorId}`);
-    return response.data;
+    try {
+      const response = await api.get(`/plantoes/colaborador/${colaboradorId}`);
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        return [];
+      }
+      throw error;
+    }
   },
 
   getByStatus: async (status: 'AGENDADO' | 'EM_ANDAMENTO' | 'CONCLUIDO' | 'CANCELADO' | 'PAGO'): Promise<Duty[]> => {

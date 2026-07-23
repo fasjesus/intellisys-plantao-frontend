@@ -15,6 +15,21 @@ const formatDate = (iso: string) => {
   return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
 };
 
+type DutyPeriod = Duty['periodo'] & Partial<{
+  inicio: string;
+  fim: string;
+}>;
+
+const getPeriodStart = (periodo: Duty['periodo']) => {
+  const p = periodo as DutyPeriod;
+  return p.Inicio ?? p.inicio ?? '';
+};
+
+const getPeriodEnd = (periodo: Duty['periodo']) => {
+  const p = periodo as DutyPeriod;
+  return p.Fim ?? p.fim ?? '';
+};
+
 export function DutyHistory() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -33,11 +48,12 @@ export function DutyHistory() {
     ])
       .then(([colab, ds]) => {
         setColaborador(colab);
-        setDuties(ds.sort((a, b) => {
-          const ai = (a.periodo as any)?.Inicio ?? (a.periodo as any)?.inicio ?? '';
-          const bi = (b.periodo as any)?.Inicio ?? (b.periodo as any)?.inicio ?? '';
+        const sortedDuties = Array.isArray(ds) ? [...ds].sort((a, b) => {
+          const ai = getPeriodStart(a.periodo);
+          const bi = getPeriodStart(b.periodo);
           return new Date(bi).getTime() - new Date(ai).getTime();
-        }));
+        }) : [];
+        setDuties(sortedDuties);
       })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
@@ -63,11 +79,10 @@ export function DutyHistory() {
       } catch { /* sem logo */ }
 
       const rows = duties.map(d => {
-        const per = d.periodo as any;
         return {
           colaborador: colaborador.nome,
-          inicio: per?.Inicio ?? per?.inicio ?? '',
-          fim: per?.Fim ?? per?.fim ?? '',
+          inicio: getPeriodStart(d.periodo),
+          fim: getPeriodEnd(d.periodo),
           status: String(d.status),
           valor: d.valor_total,
         };
@@ -143,9 +158,8 @@ export function DutyHistory() {
             {duties.length === 0 ? (
               <p className="text-center text-gray-400 text-sm py-10">Nenhum plantão registrado.</p>
             ) : duties.map((d) => {
-              const per = d.periodo as any;
-              const inicio = per?.Inicio ?? per?.inicio ?? '';
-              const fim = per?.Fim ?? per?.fim ?? '';
+              const inicio = getPeriodStart(d.periodo);
+              const fim = getPeriodEnd(d.periodo);
               const st = String(d.status);
               return (
                 <div key={d.id} className="grid grid-cols-[1fr_1fr_1fr_1fr] px-6 py-4 border-b border-gray-50 items-center hover:bg-gray-50 transition-colors">
@@ -168,9 +182,8 @@ export function DutyHistory() {
           {duties.length === 0 ? (
             <p className="text-center text-gray-400 text-sm py-10">Nenhum plantão registrado.</p>
           ) : duties.map((d) => {
-            const per = d.periodo as any;
-            const inicio = per?.Inicio ?? per?.inicio ?? '';
-            const fim = per?.Fim ?? per?.fim ?? '';
+            const inicio = getPeriodStart(d.periodo);
+            const fim = getPeriodEnd(d.periodo);
             const st = String(d.status);
             return (
               <div key={d.id} className="bg-gray-50 border border-gray-100 rounded-xl p-4 shadow-sm">
