@@ -77,4 +77,13 @@ export const scaleService = {
   deleteSetor: async (id: string): Promise<void> => {
     await api.delete(`/admin/setores/${id}`);
   },
+
+  updateConfigValor: async (
+    tipo_dia: string, 
+    data: { valor?: number; vigencia_inicio?: string; vigencia_fim?: string }
+  ) => {
+    // Chama a rota PATCH passando o tipo_dia na URL (ex: /admin/config-valores/UTIL)
+    const response = await api.patch(`/admin/config-valores/${tipo_dia}`, data);
+    return response.data;
+  }
 };
