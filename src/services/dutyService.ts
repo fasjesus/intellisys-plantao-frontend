@@ -61,4 +61,9 @@ export const dutyService = {
   delete: async (id: string): Promise<void> => {
     await api.delete(`/plantoes/${id}`);
   },
+
+  pagar: async (id: string, observacoes?: string) => {
+    const response = await api.post(`/plantoes/${id}/pagamento`, { observacoes });
+    return response.data;
+  }
 };
