@@ -56,9 +56,6 @@ export function AppLayout() {
       <AppHeader
         userName={userName}
         userPhoto={userPhoto}
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        onSearch={() => {}}
       />
 
       <div className="flex flex-1 relative overflow-hidden">

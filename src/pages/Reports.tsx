@@ -4,6 +4,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { collaboratorService, type Collaborator } from '../services/collaboratorService';
 import { dutyService } from '../services/dutyService';
 import { Button } from '../components/Button';
+import { DataTable } from '../components/DataTable';
 import { pdf } from '@react-pdf/renderer';
 import { ReportTemplate, registerFonts } from '../components/ReportTemplate';
 import type { ReportGroup } from '../components/ReportTemplate';
@@ -204,26 +205,38 @@ export function Reports() {
 
           {generated && (
             <>
-              <div className="border border-gray-100 rounded-xl overflow-hidden shadow-sm bg-white">
-                <div className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr] bg-gray-50 border-b border-gray-100 px-6 py-4">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Funcionário</span>
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Início</span>
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Fim</span>
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</span>
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Valor</span>
-                </div>
-                {rows.length === 0 ? (
-                  <p className="text-center text-gray-400 text-sm py-10">Nenhum plantão encontrado para o período.</p>
-                ) : rows.map((r, i) => (
-                  <div key={i} className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr] px-6 py-4 border-b border-gray-50 items-center hover:bg-gray-50 transition-colors">
+              <DataTable<ReportRow & { _key: string }>
+                columns={[
+                  { header: 'Funcionário' },
+                  { header: 'Início' },
+                  { header: 'Fim' },
+                  { header: 'Status' },
+                  { header: 'Valor', className: 'text-right' },
+                ]}
+                gridCols="grid-cols-[1fr_1fr_1fr_1fr_1fr]"
+                items={rows.map((r, i) => ({ ...r, _key: `${r.colaborador}-${r.inicio}-${r.fim}-${i}` }))}
+                rowKey={r => r._key}
+                emptyMessage="Nenhum plantão encontrado para o período."
+                renderRow={r => (
+                  <>
                     <span className="text-xs font-bold text-gray-700 truncate">{r.colaborador}</span>
                     <span className="text-xs text-gray-600">{formatDate(r.inicio)}</span>
                     <span className="text-xs text-gray-600">{formatDate(r.fim)}</span>
                     <span className={`text-xs font-bold px-2 py-1 rounded-full w-fit ${statusClass(r.status)}`}>{statusLabel(r.status)}</span>
                     <span className="text-xs font-bold text-gray-700 text-right">{r.valor != null ? `R$ ${r.valor.toFixed(2)}` : '—'}</span>
-                  </div>
-                ))}
-              </div>
+                  </>
+                )}
+                renderMobileCard={r => (
+                  <>
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-sm font-bold text-gray-700">{r.colaborador}</span>
+                      <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${statusClass(r.status)}`}>{statusLabel(r.status)}</span>
+                    </div>
+                    <p className="text-[11px] text-gray-500">{formatDate(r.inicio)} até {formatDate(r.fim)}</p>
+                    <p className="text-sm font-bold text-gray-700 text-right mt-1">{r.valor != null ? `R$ ${r.valor.toFixed(2)}` : '—'}</p>
+                  </>
+                )}
+              />
               {rows.length > 0 && (
                 <div className="flex justify-between items-center border border-gray-100 rounded-xl px-6 py-4 bg-gray-50 shadow-sm">
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{rows.length} plantão(ões) no período</span>

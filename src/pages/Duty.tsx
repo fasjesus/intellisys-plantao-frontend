@@ -4,6 +4,7 @@ import { useNavigate, useOutletContext } from 'react-router-dom';
 import { AlertCircle, Info, Plus, Loader2, X, Trash2, CircleDollarSign, CheckCircle } from 'lucide-react';
 import { SearchBar } from '../components/SearchBar';
 import { Button } from '../components/Button';
+import { DataTable } from '../components/DataTable';
 import { dutyService, type Duty } from '../services/dutyService';
 import { collaboratorService, type Collaborator } from '../services/collaboratorService';
 import { statusLabel, statusClass, normalizeStatus, statusToApiValue } from '../utils/dutyStatus';
@@ -269,74 +270,50 @@ export function Duty() {
 
       <div className="max-w-7xl mx-auto w-full flex-grow flex flex-col">
 
-        {/* TABELA DESKTOP */}
-        <div className="hidden md:block border border-gray-100 rounded-xl overflow-hidden shadow-sm bg-white mb-6">
-          <div className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr] bg-gray-50 border-b border-gray-100 px-6 py-4">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Código</span>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Início</span>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Fim</span>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</span>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Funcionário</span>
-          </div>
-          <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
-            {filtered.length === 0 ? (
-              <p className="text-center text-gray-400 text-sm py-10">Nenhum plantão encontrado.</p>
-            ) : filtered.map((p) => {
-              const isSelected = selected?.id === p.id;
-              return (
-                <div
-                  key={p.id}
-                  onClick={() => setSelected(prev => prev?.id === p.id ? null : p)}
-                  className={[
-                    'grid grid-cols-[1fr_1fr_1fr_1fr_1fr] px-6 py-4 border-b border-gray-50 items-center transition-colors cursor-pointer',
-                    isSelected ? 'bg-red-50 border-l-2 border-l-[#B5071A]' : 'hover:bg-gray-50',
-                  ].join(' ')}
-                >
-                  <span className="text-xs font-bold text-gray-400">{p.id.split('-')[0].toUpperCase()}</span>
-                  <span className="text-xs font-bold text-gray-700">{formatDate(p.periodo.Inicio)}</span>
-                  <span className="text-xs font-bold text-gray-700">{formatDate(p.periodo.Fim)}</span>
-                  <span className={`text-xs font-bold px-2 py-1 rounded-full w-fit ${statusClass(p.status)}`}>
-                    {statusLabel(p.status)}
-                  </span>
-                  <span className="text-xs font-bold text-gray-700">{p.funcionario}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* MOBILE CARDS */}
-        <div className="md:hidden">
-          <div className="max-h-[360px] overflow-y-auto space-y-3 pb-4 pr-1 custom-scrollbar">
-            {filtered.length === 0 ? (
-              <p className="text-center text-gray-400 text-sm py-10">Nenhum plantão encontrado.</p>
-            ) : filtered.map((p) => {
-              const isSelected = selected?.id === p.id;
-              return (
-                <div
-                  key={p.id}
-                  onClick={() => setSelected(prev => prev?.id === p.id ? null : p)}
-                  className={[
-                    'border rounded-xl p-4 shadow-sm cursor-pointer transition-all',
-                    isSelected ? 'bg-red-50 border-[#B5071A]' : 'bg-gray-50 border-gray-100',
-                  ].join(' ')}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="text-[10px] font-bold text-gray-400">CÓD: {p.id.split('-')[0].toUpperCase()}</span>
-                    <span className={`text-[10px] font-bold uppercase ${statusClass(p.status)}`}>{statusLabel(p.status)}</span>
-                  </div>
-                  <p className="text-sm font-bold text-gray-700">{p.funcionario}</p>
-                  <p className="text-[11px] text-gray-500">{formatDate(p.periodo.Inicio)} até {formatDate(p.periodo.Fim)}</p>
-                </div>
-              );
-            })}
-          </div>
-          {filtered.length > 2 && (
-            <div className="text-center py-2">
-              <div className="w-8 h-1 bg-gray-200 rounded-full mx-auto animate-pulse"></div>
-            </div>
+        <DataTable<DutyWithNome>
+          columns={[
+            { header: 'Código' },
+            { header: 'Início' },
+            { header: 'Fim' },
+            { header: 'Status' },
+            { header: 'Funcionário' },
+          ]}
+          gridCols="grid-cols-[1fr_1fr_1fr_1fr_1fr]"
+          items={filtered}
+          rowKey={p => p.id}
+          emptyMessage="Nenhum plantão encontrado."
+          maxHeight="400px"
+          containerClassName="mb-6"
+          mobileClassName="pb-4"
+          onRowClick={p => setSelected(prev => prev?.id === p.id ? null : p)}
+          isRowSelected={p => selected?.id === p.id}
+          renderRow={p => (
+            <>
+              <span className="text-xs font-bold text-gray-400">{p.id.split('-')[0].toUpperCase()}</span>
+              <span className="text-xs font-bold text-gray-700">{formatDate(p.periodo.Inicio)}</span>
+              <span className="text-xs font-bold text-gray-700">{formatDate(p.periodo.Fim)}</span>
+              <span className={`text-xs font-bold px-2 py-1 rounded-full w-fit ${statusClass(p.status)}`}>
+                {statusLabel(p.status)}
+              </span>
+              <span className="text-xs font-bold text-gray-700">{p.funcionario}</span>
+            </>
           )}
-        </div>
+          renderMobileCard={p => (
+            <>
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-[10px] font-bold text-gray-400">CÓD: {p.id.split('-')[0].toUpperCase()}</span>
+                <span className={`text-[10px] font-bold uppercase ${statusClass(p.status)}`}>{statusLabel(p.status)}</span>
+              </div>
+              <p className="text-sm font-bold text-gray-700">{p.funcionario}</p>
+              <p className="text-[11px] text-gray-500">{formatDate(p.periodo.Inicio)} até {formatDate(p.periodo.Fim)}</p>
+            </>
+          )}
+        />
+        {filtered.length > 2 && (
+          <div className="md:hidden text-center py-2">
+            <div className="w-8 h-1 bg-gray-200 rounded-full mx-auto animate-pulse"></div>
+          </div>
+        )}
 
         {/* TOOLBAR */}
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 md:relative md:border-none md:p-0 md:mt-6 md:flex md:justify-end md:gap-3">
@@ -504,11 +481,6 @@ export function Duty() {
           </div>
         </div>
       )}
-
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d9d9d9; border-radius: 10px; }
-      `}</style>
     </div>
   );
 }

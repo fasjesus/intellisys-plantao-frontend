@@ -1,24 +1,17 @@
 import { LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
 import logo from '../assets/images/logo.png';
-import { SearchBar } from './SearchBar';
 import { UserAvatar } from './UserAvatar';
 
 interface AppHeaderProps {
   userName?: string;
   userPhoto?: string;
-  searchTerm?: string;
-  setSearchTerm?: (value: string) => void;
-  onSearch?: (e?: React.FormEvent<HTMLFormElement>) => void;
   onLogout?: () => void;
 }
 
 export function AppHeader({
   userName,
   userPhoto,
-  searchTerm = '',
-  setSearchTerm,
-  onSearch,
   onLogout,
 }: AppHeaderProps) {
   return (

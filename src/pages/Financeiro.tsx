@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Loader2, Plus, Pencil, X, Save, Calendar, DollarSign } from 'lucide-react';
 import { Button } from '../components/Button';
+import { DataTable } from '../components/DataTable';
 import { scaleService, type ConfigValor, type Feriado } from '../services/scaleService';
 
 type Aba = 'valores' | 'feriados';
@@ -183,97 +184,96 @@ function AbaValores() {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* DESKTOP */}
-      <div className="hidden md:block border border-gray-100 rounded-xl overflow-hidden shadow-sm">
-        <div className="grid grid-cols-[1fr_1fr_1.2fr_1fr_100px] bg-gray-50 border-b border-gray-100 px-6 py-4">
-          {['Tipo de Dia', 'Valor', 'Vigência Início', 'Status', 'Ações'].map(h => (
-            <span key={h} className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{h}</span>
-          ))}
-        </div>
-        <div className="max-h-[420px] overflow-y-auto custom-scrollbar divide-y divide-gray-50">
-          {valores.length === 0 ? (
-            <p className="text-center text-gray-400 text-sm py-10">Nenhum valor cadastrado.</p>
-          ) : valores.map(v => (
-            <div key={v.id} className="grid grid-cols-[1fr_1fr_1.2fr_1fr_100px] px-6 py-4 items-center hover:bg-gray-50 transition-colors">
-              <span className="text-xs font-bold text-gray-700">{TIPO_DIA_LABEL[v.tipo_dia]}</span>
-              
-              {editingId === v.id ? (
-                <input
-                  type="number"
-                  step="0.01"
-                  value={editValor}
-                  onChange={e => setEditValor(e.target.value)}
-                  className="h-8 w-24 px-2 rounded-lg border border-[#B5071A] text-xs text-gray-700 outline-none"
-                />
-              ) : (
-                <span className="text-xs font-bold text-[#B5071A]">{formatCurrency(v.valor)}</span>
-              )}
+      <DataTable<ConfigValor>
+        columns={[
+          { header: 'Tipo de Dia' },
+          { header: 'Valor' },
+          { header: 'Vigência Início' },
+          { header: 'Status' },
+          { header: 'Ações' },
+        ]}
+        gridCols="grid-cols-[1fr_1fr_1.2fr_1fr_100px]"
+        items={valores}
+        rowKey={v => v.id}
+        emptyMessage="Nenhum valor cadastrado."
+        renderRow={v => (
+          <>
+            <span className="text-xs font-bold text-gray-700">{TIPO_DIA_LABEL[v.tipo_dia]}</span>
 
-              {editingId === v.id ? (
-                <input
-                  type="date"
-                  value={editVigencia}
-                  onChange={e => setEditVigencia(e.target.value)}
-                  className="h-8 w-32 px-2 rounded-lg border border-[#B5071A] text-xs text-gray-700 outline-none"
-                />
-              ) : (
-                <span className="text-xs text-gray-500">{formatDate(v.vigencia_inicio)}</span>
-              )}
-              
-              <span className={`text-[10px] font-bold px-2 py-1 rounded-full w-fit ${vigente(v) ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
-                {vigente(v) ? 'Vigente' : 'Encerrado'}
-              </span>
+            {editingId === v.id ? (
+              <input
+                type="number"
+                step="0.01"
+                value={editValor}
+                onChange={e => setEditValor(e.target.value)}
+                onClick={e => e.stopPropagation()}
+                className="h-8 w-24 px-2 rounded-lg border border-[#B5071A] text-xs text-gray-700 outline-none"
+              />
+            ) : (
+              <span className="text-xs font-bold text-[#B5071A]">{formatCurrency(v.valor)}</span>
+            )}
 
-              <div className="flex gap-2">
-                {editingId === v.id ? (
-                  <>
-                    <button
-                      onClick={() => handleUpdate(v)}
-                      disabled={updating}
-                      className="text-[10px] font-bold text-green-600 hover:text-green-700 flex items-center gap-1 transition-colors"
-                    >
-                      {updating ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
-                      Salvar
-                    </button>
-                    <button
-                      onClick={() => setEditingId(null)}
-                      className="text-[10px] font-bold text-gray-400 hover:text-gray-600 flex items-center gap-1 transition-colors"
-                    >
-                      <X size={12} />
-                    </button>
-                  </>
-                ) : (
+            {editingId === v.id ? (
+              <input
+                type="date"
+                value={editVigencia}
+                onChange={e => setEditVigencia(e.target.value)}
+                onClick={e => e.stopPropagation()}
+                className="h-8 w-32 px-2 rounded-lg border border-[#B5071A] text-xs text-gray-700 outline-none"
+              />
+            ) : (
+              <span className="text-xs text-gray-500">{formatDate(v.vigencia_inicio)}</span>
+            )}
+
+            <span className={`text-[10px] font-bold px-2 py-1 rounded-full w-fit ${vigente(v) ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
+              {vigente(v) ? 'Vigente' : 'Encerrado'}
+            </span>
+
+            <div className="flex gap-2">
+              {editingId === v.id ? (
+                <>
                   <button
-                    onClick={() => { 
-                      setEditingId(v.id); 
-                      setEditValor(String(v.valor)); 
-                      setEditVigencia(v.vigencia_inicio?.split('T')[0] ?? ''); 
-                    }}
-                    className="text-[10px] font-bold text-gray-400 hover:text-[#B5071A] flex items-center gap-1 transition-colors"
+                    onClick={e => { e.stopPropagation(); handleUpdate(v); }}
+                    disabled={updating}
+                    className="text-[10px] font-bold text-green-600 hover:text-green-700 flex items-center gap-1 transition-colors"
                   >
-                    <Pencil size={12} /> Editar
+                    {updating ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
+                    Salvar
                   </button>
-                )}
-              </div>
+                  <button
+                    onClick={e => { e.stopPropagation(); setEditingId(null); }}
+                    className="text-[10px] font-bold text-gray-400 hover:text-gray-600 flex items-center gap-1 transition-colors"
+                  >
+                    <X size={12} />
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={e => {
+                    e.stopPropagation();
+                    setEditingId(v.id);
+                    setEditValor(String(v.valor));
+                    setEditVigencia(v.vigencia_inicio?.split('T')[0] ?? '');
+                  }}
+                  className="text-[10px] font-bold text-gray-400 hover:text-[#B5071A] flex items-center gap-1 transition-colors"
+                >
+                  <Pencil size={12} /> Editar
+                </button>
+              )}
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* MOBILE */}
-      <div className="md:hidden space-y-3 pb-28">
-        {valores.length === 0 ? (
-          <p className="text-center text-gray-400 text-sm py-10">Nenhum valor cadastrado.</p>
-        ) : valores.map(v => (
-          <div key={v.id} className="border border-gray-100 rounded-xl p-4 shadow-sm bg-gray-50">
+          </>
+        )}
+        renderMobileCard={v => (
+          <>
             <div className="flex justify-between items-start mb-2">
               <span className="text-sm font-bold text-gray-700">{TIPO_DIA_LABEL[v.tipo_dia]}</span>
               {editingId !== v.id && (
                 <button
-                  onClick={() => { 
-                    setEditingId(v.id); 
-                    setEditValor(String(v.valor)); 
-                    setEditVigencia(v.vigencia_inicio?.split('T')[0] ?? ''); 
+                  onClick={e => {
+                    e.stopPropagation();
+                    setEditingId(v.id);
+                    setEditValor(String(v.valor));
+                    setEditVigencia(v.vigencia_inicio?.split('T')[0] ?? '');
                   }}
                   className="text-gray-400 hover:text-[#B5071A] transition-colors"
                 >
@@ -289,6 +289,7 @@ function AbaValores() {
                   step="0.01"
                   value={editValor}
                   onChange={e => setEditValor(e.target.value)}
+                  onClick={e => e.stopPropagation()}
                   className="h-9 px-3 rounded-lg border border-[#B5071A] text-sm text-gray-700 outline-none"
                   placeholder="Novo Valor"
                 />
@@ -296,13 +297,14 @@ function AbaValores() {
                   type="date"
                   value={editVigencia}
                   onChange={e => setEditVigencia(e.target.value)}
+                  onClick={e => e.stopPropagation()}
                   className="h-9 px-3 rounded-lg border border-[#B5071A] text-sm text-gray-700 outline-none"
                 />
                 <div className="flex gap-3 mt-2">
-                  <button onClick={() => handleUpdate(v)} disabled={updating} className="text-[11px] font-bold text-green-600 uppercase">
+                  <button onClick={e => { e.stopPropagation(); handleUpdate(v); }} disabled={updating} className="text-[11px] font-bold text-green-600 uppercase">
                     {updating ? 'Salvando...' : 'Salvar'}
                   </button>
-                  <button onClick={() => setEditingId(null)} className="text-[11px] font-bold text-gray-400 uppercase">
+                  <button onClick={e => { e.stopPropagation(); setEditingId(null); }} className="text-[11px] font-bold text-gray-400 uppercase">
                     Cancelar
                   </button>
                 </div>
@@ -318,9 +320,9 @@ function AbaValores() {
                 </div>
               </>
             )}
-          </div>
-        ))}
-      </div>
+          </>
+        )}
+      />
 
       {!showForm && (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 md:relative md:border-none md:p-0 md:flex md:justify-end md:gap-3">
@@ -337,9 +339,6 @@ function AbaFeriados() {
   const [feriados, setFeriados] = useState<Feriado[]>([]);
   const [loading, setLoading] = useState(true);
   const [ano, setAno] = useState(new Date().getFullYear());
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editData, setEditData] = useState('');
-  const [saving, setSaving] = useState(false);
 
   async function load(a: number) {
     setLoading(true);
@@ -354,19 +353,6 @@ function AbaFeriados() {
   }
 
   useEffect(() => { load(ano); }, [ano]);
-
-  const handleSave = async (id: string) => {
-    setSaving(true);
-    try {
-      await scaleService.updateFeriado(id, editData);
-      setFeriados(prev => prev.map(f => f.id === id ? { ...f, data: `${editData}T00:00:00Z` } : f));
-      setEditingId(null);
-    } catch {
-      alert('Erro ao atualizar feriado. Tente novamente.');
-    } finally {
-      setSaving(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -392,100 +378,34 @@ function AbaFeriados() {
         >›</button>
       </div>
 
-      {/* DESKTOP */}
-      <div className="hidden md:block border border-gray-100 rounded-xl overflow-hidden shadow-sm">
-        <div className="grid grid-cols-[2fr_1fr_1fr] bg-gray-50 border-b border-gray-100 px-6 py-4">
-          {['Nome', 'Data', 'Ação'].map(h => (
-            <span key={h} className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{h}</span>
-          ))}
-        </div>
-        <div className="max-h-[420px] overflow-y-auto custom-scrollbar divide-y divide-gray-50">
-          {feriados.length === 0 ? (
-            <p className="text-center text-gray-400 text-sm py-10">Nenhum feriado encontrado para {ano}.</p>
-          ) : feriados.map(f => (
-            <div key={f.id} className="grid grid-cols-[2fr_1fr_1fr] px-6 py-3 items-center hover:bg-gray-50 transition-colors">
-              <span className="text-xs font-bold text-gray-700">{f.nome}</span>
-              {editingId === f.id ? (
-                <input
-                  type="date"
-                  value={editData}
-                  onChange={e => setEditData(e.target.value)}
-                  className="h-8 px-2 rounded-lg border border-[#B5071A] text-xs text-gray-700 outline-none"
-                />
-              ) : (
-                <span className="text-xs text-gray-500">{formatDate(f.data)}</span>
-              )}
-              <div className="flex gap-2">
-                {editingId === f.id ? (
-                  <>
-                    <button
-                      onClick={() => handleSave(f.id)}
-                      disabled={saving}
-                      className="text-[10px] font-bold text-green-600 hover:text-green-700 flex items-center gap-1 transition-colors"
-                    >
-                      {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
-                      Salvar
-                    </button>
-                    <button
-                      onClick={() => setEditingId(null)}
-                      className="text-[10px] font-bold text-gray-400 hover:text-gray-600 flex items-center gap-1 transition-colors"
-                    >
-                      <X size={12} /> Cancelar
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={() => { setEditingId(f.id); setEditData(f.data?.split('T')[0] ?? ''); }}
-                    className="text-[10px] font-bold text-gray-400 hover:text-[#B5071A] flex items-center gap-1 transition-colors"
-                  >
-                    <Pencil size={12} /> Editar
-                  </button>
-                )}
-              </div>
+      <DataTable<Feriado>
+        columns={[
+          { header: 'Nome' },
+          { header: 'Data' },
+          { header: 'Tipo' },
+        ]}
+        gridCols="grid-cols-[2fr_1fr_1fr]"
+        items={feriados}
+        rowKey={f => f.id}
+        emptyMessage={`Nenhum feriado encontrado para ${ano}.`}
+        mobileClassName="pb-10"
+        renderRow={f => (
+          <>
+            <span className="text-xs font-bold text-gray-700">{f.nome}</span>
+            <span className="text-xs text-gray-500">{formatDate(f.data)}</span>
+            <span className="text-xs text-gray-500">{f.descricao || '—'}</span>
+          </>
+        )}
+        renderMobileCard={f => (
+          <>
+            <p className="text-sm font-bold text-gray-700">{f.nome}</p>
+            <div className="flex items-center justify-between mt-1">
+              <p className="text-[11px] text-gray-400">{formatDate(f.data)}</p>
+              <p className="text-[11px] text-gray-400">{f.descricao || '—'}</p>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* MOBILE */}
-      <div className="md:hidden space-y-3 pb-10">
-        {feriados.length === 0 ? (
-          <p className="text-center text-gray-400 text-sm py-10">Nenhum feriado encontrado para {ano}.</p>
-        ) : feriados.map(f => (
-          <div key={f.id} className="border border-gray-100 rounded-xl p-4 shadow-sm bg-gray-50">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm font-bold text-gray-700">{f.nome}</p>
-                {editingId === f.id ? (
-                  <input
-                    type="date"
-                    value={editData}
-                    onChange={e => setEditData(e.target.value)}
-                    className="mt-1 h-8 px-2 rounded-lg border border-[#B5071A] text-xs text-gray-700 outline-none"
-                  />
-                ) : (
-                  <p className="text-[11px] text-gray-400 mt-0.5">{formatDate(f.data)}</p>
-                )}
-              </div>
-              {editingId === f.id ? (
-                <div className="flex gap-2 mt-1">
-                  <button onClick={() => handleSave(f.id)} disabled={saving} className="text-[10px] font-bold text-green-600">
-                    {saving ? <Loader2 size={12} className="animate-spin" /> : 'Salvar'}
-                  </button>
-                  <button onClick={() => setEditingId(null)} className="text-[10px] font-bold text-gray-400">Cancelar</button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => { setEditingId(f.id); setEditData(f.data?.split('T')[0] ?? ''); }}
-                  className="text-gray-400 hover:text-[#B5071A] transition-colors"
-                >
-                  <Pencil size={14} />
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+          </>
+        )}
+      />
     </div>
   );
 }
@@ -529,11 +449,6 @@ export function Financeiro() {
 
         {aba === 'valores' ? <AbaValores /> : <AbaFeriados />}
       </div>
-
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d9d9d9; border-radius: 10px; }
-      `}</style>
     </div>
   );
 }

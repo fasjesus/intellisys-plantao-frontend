@@ -101,9 +101,6 @@ export function Home() {
       <AppHeader
         userName={userName}
         userPhoto={userPhoto}
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        onSearch={handleGlobalSearch}
         onLogout={handleLogout}
       />
 

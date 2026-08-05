@@ -4,6 +4,7 @@ import { Loader2, AlertCircle, Printer } from 'lucide-react';
 import { collaboratorService, type Collaborator } from '../../services/collaboratorService';
 import { dutyService, type Duty } from '../../services/dutyService';
 import { Button } from '../../components/Button';
+import { DataTable } from '../../components/DataTable';
 import { pdf } from '@react-pdf/renderer';
 import { ReportTemplate, registerFonts } from '../../components/ReportTemplate';
 import { statusLabel, statusClass as statusStyle } from '../../utils/dutyStatus';
@@ -145,48 +146,42 @@ export function DutyHistory() {
 
       <div className="max-w-5xl mx-auto w-full flex-grow flex flex-col">
 
-        {/* TABELA DESKTOP */}
-        <div className="hidden md:block border border-gray-100 rounded-xl overflow-hidden shadow-sm bg-white mb-4">
-          <div className="grid grid-cols-[1fr_1fr_1fr_1fr] bg-gray-50 border-b border-gray-100 px-6 py-4">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Início</span>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Fim</span>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</span>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Valor</span>
-          </div>
-
-          <div className="max-h-[420px] overflow-y-auto custom-scrollbar">
-            {duties.length === 0 ? (
-              <p className="text-center text-gray-400 text-sm py-10">Nenhum plantão registrado.</p>
-            ) : duties.map((d) => {
-              const inicio = getPeriodStart(d.periodo);
-              const fim = getPeriodEnd(d.periodo);
-              const st = String(d.status);
-              return (
-                <div key={d.id} className="grid grid-cols-[1fr_1fr_1fr_1fr] px-6 py-4 border-b border-gray-50 items-center hover:bg-gray-50 transition-colors">
-                  <span className="text-xs text-gray-600">{formatDate(inicio)}</span>
-                  <span className="text-xs text-gray-600">{formatDate(fim)}</span>
-                  <span className={`text-[10px] font-bold px-2 py-1 rounded-full w-fit ${statusStyle(st)}`}>
-                    {statusLabel(st)}
-                  </span>
-                  <span className="text-xs font-bold text-gray-700 text-right">
-                    {d.valor_total != null ? `R$ ${d.valor_total.toFixed(2)}` : '—'}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* MOBILE CARDS */}
-        <div className="md:hidden space-y-3 pb-4">
-          {duties.length === 0 ? (
-            <p className="text-center text-gray-400 text-sm py-10">Nenhum plantão registrado.</p>
-          ) : duties.map((d) => {
+        <DataTable<Duty>
+          columns={[
+            { header: 'Início' },
+            { header: 'Fim' },
+            { header: 'Status' },
+            { header: 'Valor', className: 'text-right' },
+          ]}
+          gridCols="grid-cols-[1fr_1fr_1fr_1fr]"
+          items={duties}
+          rowKey={d => d.id}
+          emptyMessage="Nenhum plantão registrado."
+          containerClassName="mb-4"
+          mobileClassName="pb-4"
+          renderRow={d => {
             const inicio = getPeriodStart(d.periodo);
             const fim = getPeriodEnd(d.periodo);
             const st = String(d.status);
             return (
-              <div key={d.id} className="bg-gray-50 border border-gray-100 rounded-xl p-4 shadow-sm">
+              <>
+                <span className="text-xs text-gray-600">{formatDate(inicio)}</span>
+                <span className="text-xs text-gray-600">{formatDate(fim)}</span>
+                <span className={`text-[10px] font-bold px-2 py-1 rounded-full w-fit ${statusStyle(st)}`}>
+                  {statusLabel(st)}
+                </span>
+                <span className="text-xs font-bold text-gray-700 text-right">
+                  {d.valor_total != null ? `R$ ${d.valor_total.toFixed(2)}` : '—'}
+                </span>
+              </>
+            );
+          }}
+          renderMobileCard={d => {
+            const inicio = getPeriodStart(d.periodo);
+            const fim = getPeriodEnd(d.periodo);
+            const st = String(d.status);
+            return (
+              <>
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-xs text-gray-500">{formatDate(inicio)} → {formatDate(fim)}</span>
                   <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${statusStyle(st)}`}>
@@ -196,10 +191,10 @@ export function DutyHistory() {
                 <p className="text-sm font-bold text-gray-700 text-right">
                   {d.valor_total != null ? `R$ ${d.valor_total.toFixed(2)}` : '—'}
                 </p>
-              </div>
+              </>
             );
-          })}
-        </div>
+          }}
+        />
 
         {duties.length > 0 && (
           <div className="flex justify-between items-center border border-gray-100 rounded-xl px-6 py-4 bg-gray-50 shadow-sm mb-6">
@@ -220,11 +215,6 @@ export function DutyHistory() {
           <Button label="Voltar" variant="secondary" onClick={() => navigate(`/users/details/${id}`)} />
         </div>
       </div>
-
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d9d9d9; border-radius: 10px; }
-      `}</style>
     </div>
   );
 }
