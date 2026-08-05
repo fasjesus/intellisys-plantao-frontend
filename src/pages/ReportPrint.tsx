@@ -1,3 +1,6 @@
+// ─── CÓDIGO LEGADO, IGNORAR POR ENQUANTO ─────────────────────────────────────────────────────────────
+
+
 import { useEffect } from 'react';
 import logo from '../assets/images/logo.png';
 import { statusLabel, statusColors } from '../utils/dutyStatus';
