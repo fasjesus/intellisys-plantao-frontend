@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Trash2, RefreshCw, Mail, Clock, CheckCircle, RotateCcw, Plus, X } from 'lucide-react';
+import { Loader2, Trash2, RefreshCw, Mail, Clock, CheckCircle, RotateCcw, Plus, X, Ban } from 'lucide-react';
 import { conviteService, type Convite } from '../services/conviteService';
 import { collaboratorService, type Collaborator } from '../services/collaboratorService';
 import { Button } from '../components/Button';
 import { DataTable } from '../components/DataTable';
-import { isExpirado } from '../utils/conviteStatus';
+import { isExpirado, isRevogado } from '../utils/conviteStatus';
 
 interface ConviteRow extends Convite {
   nomeColaborador: string;
@@ -46,11 +46,17 @@ export function Convites() {
       const colabMap: Record<string, { nome: string; email: string }> = {};
       listaColaboradores.forEach(c => { colabMap[c.id] = { nome: c.nome, email: c.email }; });
       
-      setConvites(lista.map(cv => ({
+      const convitesComNome = lista.map(cv => ({
         ...cv,
         nomeColaborador: colabMap[cv.id_colaborador]?.nome ?? '—',
         emailColaborador: colabMap[cv.id_colaborador]?.email ?? '',
-      })));
+      }));
+      convitesComNome.sort((a, b) => {
+        const aRevogado = isRevogado(a.expira_em, a.usado);
+        const bRevogado = isRevogado(b.expira_em, b.usado);
+        return aRevogado === bRevogado ? 0 : aRevogado ? 1 : -1;
+      });
+      setConvites(convitesComNome);
     } catch {
       alert('Erro ao carregar convites.');
     } finally {
@@ -188,14 +194,19 @@ export function Convites() {
             onRowClick={cv => setSelected(prev => prev?.token === cv.token ? null : cv)}
             isRowSelected={cv => selected?.token === cv.token}
             renderRow={cv => {
-              const expirado = isExpirado(cv.expira_em);
+              const revogado = isRevogado(cv.expira_em, cv.usado);
+              const expirado = !revogado && isExpirado(cv.expira_em);
               return (
                 <>
                   <span className="text-xs font-bold text-gray-700 uppercase truncate">{cv.nomeColaborador}</span>
                   <span className="text-[10px] font-mono text-gray-400 truncate">{cv.token.split('-')[0].toUpperCase()}…</span>
-                  <span className="text-xs text-gray-500">{formatDate(cv.expira_em)}</span>
+                  <span className="text-xs text-gray-500">{revogado ? '—' : formatDate(cv.expira_em)}</span>
                   <div className="flex items-center gap-1.5">
-                    {cv.usado ? (
+                    {revogado ? (
+                      <span className="flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-1 rounded-full">
+                        <Ban size={10} /> Revogado
+                      </span>
+                    ) : cv.usado ? (
                       <span className="flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full">
                         <CheckCircle size={10} /> Usado
                       </span>
@@ -213,7 +224,7 @@ export function Convites() {
                     ) : (
                       <button
                         onClick={e => { e.stopPropagation(); handleRevogar(cv); }}
-                        disabled={cv.usado}
+                        disabled={cv.usado || revogado}
                         className="text-gray-300 hover:text-[#B5071A] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                       >
                         <Trash2 size={14} />
@@ -224,12 +235,17 @@ export function Convites() {
               );
             }}
             renderMobileCard={cv => {
-              const expirado = isExpirado(cv.expira_em);
+              const revogado = isRevogado(cv.expira_em, cv.usado);
+              const expirado = !revogado && isExpirado(cv.expira_em);
               return (
                 <>
                   <div className="flex justify-between items-start mb-2">
                     <span className="text-sm font-bold text-gray-700 uppercase">{cv.nomeColaborador}</span>
-                    {cv.usado ? (
+                    {revogado ? (
+                      <span className="flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-1 rounded-full">
+                        <Ban size={10} /> Revogado
+                      </span>
+                    ) : cv.usado ? (
                       <span className="flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full">
                         <CheckCircle size={10} /> Usado
                       </span>
@@ -242,7 +258,7 @@ export function Convites() {
                     )}
                   </div>
                   <p className="text-[10px] font-mono text-gray-400 mb-1">{cv.token.split('-')[0].toUpperCase()}…</p>
-                  <p className="text-[11px] text-gray-500">Expira: {formatDate(cv.expira_em)}</p>
+                  <p className="text-[11px] text-gray-500">{revogado ? 'Revogado' : `Expira: ${formatDate(cv.expira_em)}`}</p>
                 </>
               );
             }}
@@ -275,7 +291,7 @@ export function Convites() {
               <Button
                 label={revoking ? 'Revogando...' : 'Revogar'}
                 icon={revoking ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                disabled={!selected || !!revoking || selected?.usado}
+                disabled={!selected || !!revoking || selected?.usado || (selected ? isRevogado(selected.expira_em, selected.usado) : false)}
                 className={!selected || selected?.usado ? 'opacity-30 cursor-not-allowed' : ''}
                 onClick={() => selected && handleRevogar(selected)}
               />

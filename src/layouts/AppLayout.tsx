@@ -10,7 +10,7 @@ export function AppLayout() {
   const [searchTerm, setSearchTerm] = useState('');
   const [userName, setUserName] = useState('USUÁRIO');
   const [userPhoto, setUserPhoto] = useState<string | undefined>();
-  const [userRole, setUserRole] = useState<string>('colaborador');
+  const [userRole, setUserRole] = useState<string | null>(null);
   const navigate = useNavigate();
 
   // 1. Efeito para carregar o nome e foto do colaborador logado
@@ -59,13 +59,17 @@ export function AppLayout() {
       />
 
       <div className="flex flex-1 relative overflow-hidden">
-        <Sidebar
-          isOpen={isSidebarOpen}
-          onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-          onClose={() => setIsSidebarOpen(false)}
-          onLogout={handleLogout}
-          role={userRole}
-        />
+        {userRole === null ? (
+          <div className={`hidden md:block shrink-0 bg-white shadow-[4px_0_12px_-2px_rgba(0,0,0,0.06)] ${isSidebarOpen ? 'w-52' : 'w-14'}`} />
+        ) : (
+          <Sidebar
+            isOpen={isSidebarOpen}
+            onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+            onClose={() => setIsSidebarOpen(false)}
+            onLogout={handleLogout}
+            role={userRole}
+          />
+        )}
 
         <motion.main
           className="flex-1 overflow-y-auto bg-white"
