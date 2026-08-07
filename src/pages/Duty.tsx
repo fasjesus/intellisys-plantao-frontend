@@ -53,7 +53,7 @@ export function Duty() {
   // MODAIS
   const [showModal, setShowModal] = useState(false);
   const [showDetalhes, setShowDetalhes] = useState(false);
-  const [showFinishModal, setShowFinishModal] = useState(false); // NOVO MODAL
+  const [showFinishModal, setShowFinishModal] = useState(false);
   
   // ESTADOS DE AÇÃO
   const [saving, setSaving] = useState(false);
@@ -62,7 +62,7 @@ export function Duty() {
   const [finishing, setFinishing] = useState(false);
   
   const [selected, setSelected] = useState<DutyWithNome | null>(null);
-  const [finishObservation, setFinishObservation] = useState(''); // ESTADO DA OBSERVAÇÃO
+  const [finishObservation, setFinishObservation] = useState('');
 
   const [form, setForm] = useState<CreateForm>({
     colaborador_id: '',
@@ -135,7 +135,6 @@ export function Duty() {
       setShowModal(false);
       setForm({ colaborador_id: '', inicio: '', fim: '' });
       
-      // Recarregar dados
       const data = await dutyService.getAll();
       if (!Array.isArray(data)) return;
       const colaboradoresCache: Record<string, string> = {};
@@ -175,10 +174,9 @@ export function Duty() {
     }
   };
 
-  // --- NOVA LÓGICA DE FINALIZAR ---
   const handleOpenFinishModal = () => {
     if (!selected) return;
-    setFinishObservation(''); // Limpa a observação sempre que abrir
+    setFinishObservation('');
     setShowFinishModal(true);
   };
 
@@ -193,10 +191,8 @@ export function Duty() {
 
     setFinishing(true);
     try {
-      // Passa a observação como terceiro parâmetro
       await dutyService.updateStatus(selected.id, statusToApiValue('CONCLUIDO'), finishObservation);
       
-      // Recarrega todos os plantões para obter o valor_total e observações atualizados do backend
       const data = await dutyService.getAll();
       if (Array.isArray(data)) {
         const colaboradoresCache: Record<string, string> = {};
@@ -209,7 +205,6 @@ export function Duty() {
         
         setPlantoes(withNomes);
         
-        // Atualiza o selecionado em tela
         const updatedSelected = withNomes.find(p => p.id === selected.id);
         if (updatedSelected) setSelected(updatedSelected);
       }
@@ -248,10 +243,18 @@ export function Duty() {
     return isNaN(date.getTime()) ? '—' : date.toLocaleDateString('pt-BR');
   };
 
-  const filtered = plantoes.filter(p =>
-    p.funcionario.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.id.includes(searchTerm)
-  );
+  // --- ORDENAÇÃO APLICADA AQUI ---
+  const filtered = plantoes
+    .filter(p =>
+      p.funcionario.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.id.includes(searchTerm)
+    )
+    .sort((a, b) => {
+      // Usamos a data de início para definir qual é o mais recente
+      const dateA = new Date(a.periodo?.Inicio || 0).getTime();
+      const dateB = new Date(b.periodo?.Inicio || 0).getTime();
+      return dateB - dateA; // Decrescente: o maior valor (mais recente) vem primeiro
+    });
   
   const colaboradoresDisponiveis = colaboradores.filter(c => c.ativo_plantao === 'ativo');
 
@@ -351,7 +354,6 @@ export function Duty() {
               onClick={() => selected && setShowDetalhes(true)}
             />
             
-            {/* BOTÃO ABRIR MODAL DE FINALIZAR */}
             <Button
               label="Finalizar"
               icon={<CheckCircle size={14} />}
@@ -505,7 +507,7 @@ export function Duty() {
         </div>
       )}
 
-      {/* NOVO MODAL: FINALIZAR PLANTÃO */}
+      {/* MODAL FINALIZAR PLANTÃO */}
       {showFinishModal && selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 flex flex-col gap-5">
