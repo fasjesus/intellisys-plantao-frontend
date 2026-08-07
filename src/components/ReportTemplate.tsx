@@ -15,38 +15,29 @@ export function registerFonts() {
   fontsRegistered = true;
 }
 
-interface ReportRow {
-  colaborador: string;
-  inicio: string;
-  fim: string;
-  status: string;
-  valor: number | null;
+export interface PlantaoDia {
+  data: string;
+  diaSemana: string;
+  observacao: string;
+  valor: number;
 }
 
-export interface ReportGroup {
-  funcionarioNome: string;
-  rows: ReportRow[];
-  totalValor: number;
+export interface PlantaoGroup {
+  id: string;
+  colaborador: string;
+  periodoInicio: string;
+  periodoFim: string;
+  status: string;
+  valorTotal: number;
+  dias: PlantaoDia[];
 }
 
 interface ReportTemplateProps {
-  rows: ReportRow[];
-  periodoInicio: string;
-  periodoFim: string;
-  funcionarioNome: string;
+  plantoes: PlantaoGroup[];
+  filtrosText: string;
   emitidoEm: string;
-  totalValor: number;
   logoBase64: string;
-  groups?: ReportGroup[];
 }
-
-import { statusLabel } from '../utils/dutyStatus';
-
-const formatDate = (iso: string) => {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
-};
 
 const RED = '#B5071A';
 const GRAY1 = '#111827';
@@ -64,217 +55,137 @@ const s = StyleSheet.create({
     fontFamily: REGULAR, fontSize: 9, color: GRAY1,
     backgroundColor: '#fff', paddingHorizontal: 40, paddingTop: 32, paddingBottom: 52,
   },
+  
+  headerContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 15 },
+  logoImg: { height: 28 },
+  // Removido o fontStyle: 'italic'
+  headerTitle: { fontFamily: REGULAR, fontWeight: 700, fontSize: 16, color: GRAY1, flex: 1, textAlign: 'center', paddingTop: 6 },
+  headerDate: { fontFamily: REGULAR, fontWeight: 700, fontSize: 8, color: GRAY1, paddingTop: 8 },
+  
+  filterLine: { borderBottomWidth: 1, borderBottomColor: GRAY5, paddingBottom: 6, marginBottom: 25 },
+  filterText: { fontFamily: REGULAR, fontSize: 8.5, color: GRAY5 },
+  filterLabel: { fontWeight: 700, color: GRAY1 },
 
-  // LOGO
-  logoBloco: {
-    flexDirection: 'row', alignItems: 'center',
-    borderWidth: 1, borderColor: BORDER, borderRadius: 6,
-    paddingHorizontal: 12, paddingVertical: 8, marginBottom: 10,
-  },
-  logoImg: { height: 22 },
-  logoSep: { width: 1, height: 20, backgroundColor: BORDER, marginHorizontal: 12 },
-  logoTitulo: { fontFamily: REGULAR, fontWeight: 700, fontSize: 11, color: GRAY1 },
-  logoSub: { fontFamily: REGULAR, fontWeight: 400, fontSize: 6.5, color: GRAY9, textTransform: 'uppercase', letterSpacing: 0.7, marginTop: 2 },
+  plantaoBlock: { marginBottom: 35 },
+  
+  metaContainer: { flexDirection: 'row', marginBottom: 15, paddingHorizontal: 15 },
+  metaCol: { width: '50%', display: 'flex', flexDirection: 'column', gap: 6 },
+  metaRow: { flexDirection: 'row' },
+  metaLabel: { fontFamily: REGULAR, fontWeight: 700, fontSize: 9, color: GRAY1, width: 70, textAlign: 'right', marginRight: 8 },
+  metaValue: { fontFamily: REGULAR, fontSize: 9, color: GRAY5 },
 
-  // INFO
-  infoBloco: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 12, paddingVertical: 8, marginBottom: 12,
-  },
-  infoCampos: { flexDirection: 'row', gap: 28 },
-  campoLabel: { fontFamily: REGULAR, fontWeight: 400, fontSize: 6, textTransform: 'uppercase', letterSpacing: 0.8, color: GRAY9, marginBottom: 2 },
-  campoValor: { fontFamily: REGULAR, fontWeight: 700, fontSize: 9.5, color: GRAY1 },
-  totalLabel: { fontFamily: REGULAR, fontWeight: 400, fontSize: 6, textTransform: 'uppercase', letterSpacing: 0.8, color: GRAY9, marginBottom: 2, textAlign: 'right' },
-  totalValor: { fontFamily: REGULAR, fontWeight: 700, fontSize: 14, color: RED, textAlign: 'right' },
-
-  // TABELA
-  tableContainer: { borderWidth: 1, borderColor: BORDER, borderRadius: 6 },
-  tableHeader: { flexDirection: 'row', backgroundColor: RED },
-  thCell: { fontFamily: REGULAR, fontWeight: 700, paddingVertical: 9, paddingHorizontal: 10, fontSize: 7.5, color: '#fff', textTransform: 'uppercase', letterSpacing: 0.7 },
-
+  // Removido o fontStyle: 'italic'
+  tableTitle: { fontFamily: REGULAR, fontWeight: 700, fontSize: 12, color: GRAY5, textAlign: 'center', marginBottom: 10 },
+  tableHeader: { flexDirection: 'row', backgroundColor: FOOT_BG, borderBottomWidth: 1, borderBottomColor: BORDER },
+  thCell: { fontFamily: REGULAR, fontWeight: 700, paddingVertical: 8, paddingHorizontal: 10, fontSize: 8.5, color: GRAY1 },
+  
   tableRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: BORDER },
-  tableRowAlt: { backgroundColor: ROW_ALT },
-  tdCell: { fontFamily: REGULAR, fontWeight: 400, paddingVertical: 6, paddingHorizontal: 10, fontSize: 8.5, color: GRAY4 },
-  tdBold: { fontFamily: REGULAR, fontWeight: 700, color: GRAY1 },
+  // Removido o fontStyle: 'italic'
+  tdCell: { fontFamily: REGULAR, paddingVertical: 6, paddingHorizontal: 10, fontSize: 8.5, color: GRAY5 },
   tdRight: { textAlign: 'right' },
 
-  // BADGE
-  badgeWrap: { alignSelf: 'flex-start', borderRadius: 20, paddingHorizontal: 7, paddingVertical: 2 },
-  badgeText: { fontFamily: REGULAR, fontWeight: 700, fontSize: 6.5, textTransform: 'uppercase' },
-  badgeAbertoWrap: { backgroundColor: '#fff7ed' },
-  badgeAbertoText: { color: '#c2410c' },
-  badgePagoWrap: { backgroundColor: '#f0fdf4' },
-  badgePagoText: { color: '#15803d' },
-  badgeCanceladoWrap: { backgroundColor: '#fef2f2' },
-  badgeCanceladoText: { color: '#b91c1c' },
-  badgeConcluidoWrap: { backgroundColor: '#faf5ff' },
-  badgeConcluidoText: { color: '#7e22ce' },
-  badgeAndamentoWrap: { backgroundColor: '#eff6ff' },
-  badgeAndamentoText: { color: '#1d4ed8' },
+  tableFoot: { flexDirection: 'row', backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: GRAY1 },
+  tfLabel: { fontFamily: REGULAR, fontWeight: 700, paddingVertical: 8, paddingHorizontal: 10, fontSize: 9, color: GRAY1, textAlign: 'right' },
+  tfValue: { fontFamily: REGULAR, fontWeight: 700, paddingVertical: 8, paddingHorizontal: 10, fontSize: 9, color: GRAY1, textAlign: 'right' },
 
-  tableFoot: { flexDirection: 'row', backgroundColor: FOOT_BG, borderTopWidth: 2, borderTopColor: BORDER },
-  tfCell: { fontFamily: REGULAR, fontWeight: 700, paddingVertical: 6, paddingHorizontal: 10, fontSize: 8, color: GRAY5 },
-  tfTotal: { fontFamily: REGULAR, fontWeight: 700, fontSize: 9, color: GRAY1, textAlign: 'right' },
+  signatureWrap: { marginTop: 35, alignItems: 'center' },
+  signatureLine: { width: 220, borderTopWidth: 1, borderTopColor: GRAY5, marginBottom: 6 },
+  signatureText: { fontFamily: REGULAR, fontSize: 8.5, color: GRAY5 },
 
-  // FOOTER
   footer: { position: 'absolute', bottom: 20, left: 40, right: 40, alignItems: 'center' },
-  footerSep: { width: 360, height: 1, backgroundColor: BORDER, marginBottom: 5 },
-  footerL1: { fontFamily: REGULAR, fontWeight: 700, fontSize: 7.5, color: GRAY4, marginBottom: 2 },
   footerL2: { fontFamily: REGULAR, fontWeight: 400, fontSize: 6.5, color: GRAY9 },
 });
 
-const COL_WITH_FUNC = { funcionario: '37%', data: '15%', status: '17%', valor: '16%' };
-const COL_WITHOUT_FUNC = { funcionario: '0%', data: '24%', status: '22%', valor: '30%' };
+const COL = { data: '20%', dia: '25%', obs: '40%', valor: '15%' };
 
-function BadgeStatus({ status }: { status: string }) {
-  const label = statusLabel(status);
-  const wrapStyle =
-    status === 'PAGO' ? s.badgePagoWrap :
-    status === 'CANCELADO' ? s.badgeCanceladoWrap :
-    status === 'CONCLUIDO' ? s.badgeConcluidoWrap :
-    status === 'EM_ANDAMENTO' ? s.badgeAndamentoWrap :
-    s.badgeAbertoWrap;
-  const textStyle =
-    status === 'PAGO' ? s.badgePagoText :
-    status === 'CANCELADO' ? s.badgeCanceladoText :
-    status === 'CONCLUIDO' ? s.badgeConcluidoText :
-    status === 'EM_ANDAMENTO' ? s.badgeAndamentoText :
-    s.badgeAbertoText;
-  return (
-    <View style={[s.badgeWrap, wrapStyle]}>
-      <Text style={[s.badgeText, textStyle]}>{label}</Text>
-    </View>
-  );
-}
-
-interface PageContentProps {
-  rows: ReportRow[];
-  periodoInicio: string;
-  periodoFim: string;
-  funcionarioNome: string;
-  emitidoEm: string;
-  totalValor: number;
-  logoBase64: string;
-  year: number;
-  showFuncCol: boolean;
-}
-
-function ReportPage({ rows, periodoInicio, periodoFim, funcionarioNome, emitidoEm, totalValor, logoBase64, year, showFuncCol }: PageContentProps) {
-  const col = showFuncCol ? COL_WITH_FUNC : COL_WITHOUT_FUNC;
-
-  return (
-    <Page size="A4" style={s.page}>
-      {/* LOGO */}
-      <View style={s.logoBloco}>
-        {logoBase64 ? <Image style={s.logoImg} src={logoBase64} /> : null}
-        <View style={s.logoSep} />
-        <View>
-          <Text style={s.logoTitulo}>Relatório de Escala de Plantões</Text>
-          <Text style={s.logoSub}>Intellisys Informática Ltda</Text>
-        </View>
-      </View>
-
-      {/* INFO */}
-      <View style={s.infoBloco}>
-        <View style={s.infoCampos}>
-          <View>
-            <Text style={s.campoLabel}>Período</Text>
-            <Text style={s.campoValor}>{periodoInicio} - {periodoFim}</Text>
-          </View>
-          <View>
-            <Text style={s.campoLabel}>Funcionário</Text>
-            <Text style={s.campoValor}>{funcionarioNome}</Text>
-          </View>
-          <View>
-            <Text style={s.campoLabel}>Plantões</Text>
-            <Text style={s.campoValor}>{rows.length}</Text>
-          </View>
-        </View>
-        <View>
-          <Text style={s.totalLabel}>Valor Total</Text>
-          <Text style={s.totalValor}>R$ {totalValor.toFixed(2)}</Text>
-        </View>
-      </View>
-
-      {/* TABELA */}
-      <View style={s.tableContainer}>
-        <View style={s.tableHeader}>
-          {showFuncCol && <Text style={[s.thCell, { width: col.funcionario }]}>Funcionário</Text>}
-          <Text style={[s.thCell, { width: col.data }]}>Início</Text>
-          <Text style={[s.thCell, { width: col.data }]}>Fim</Text>
-          <Text style={[s.thCell, { width: col.status }]}>Status</Text>
-          <Text style={[s.thCell, { width: col.valor, textAlign: 'right' }]}>Valor</Text>
-        </View>
-
-        {rows.map((r, i) => (
-          <View key={i} style={[s.tableRow, i % 2 !== 0 ? s.tableRowAlt : {}]} wrap={false}>
-            {showFuncCol && <Text style={[s.tdCell, s.tdBold, { width: col.funcionario }]}>{r.colaborador}</Text>}
-            <Text style={[s.tdCell, { width: col.data }]}>{formatDate(r.inicio)}</Text>
-            <Text style={[s.tdCell, { width: col.data }]}>{formatDate(r.fim)}</Text>
-            <View style={[s.tdCell, { width: col.status, justifyContent: 'center' }]}>
-              <BadgeStatus status={r.status} />
-            </View>
-            <Text style={[s.tdCell, s.tdRight, { width: col.valor }]}>
-              {r.valor != null ? `R$ ${r.valor.toFixed(2)}` : '—'}
-            </Text>
-          </View>
-        ))}
-
-        <View style={s.tableFoot}>
-          {showFuncCol && <Text style={[s.tfCell, { width: col.funcionario }]} />}
-          <Text style={[s.tfCell, { flex: 1 }]}>{rows.length} plantão(ões) no período</Text>
-          <Text style={[s.tfCell, { width: col.status }]}>Total</Text>
-          <Text style={[s.tfCell, s.tfTotal, { width: col.valor }]}>R$ {totalValor.toFixed(2)}</Text>
-        </View>
-      </View>
-
-      {/* FOOTER */}
-      <View style={s.footer} fixed>
-        <View style={s.footerSep} />
-        <Text style={s.footerL1}>Intellisys Informática Ltda — Todos os direitos reservados © {year}</Text>
-        <Text style={s.footerL2}>Documento gerado automaticamente pelo sistema de gestão de plantões · Emitido em: {emitidoEm}</Text>
-      </View>
-    </Page>
-  );
-}
-
-export function ReportTemplate({ rows, periodoInicio, periodoFim, funcionarioNome, emitidoEm, totalValor, logoBase64, groups }: ReportTemplateProps) {
-  const year = new Date().getFullYear();
-
-  if (groups && groups.length > 1) {
-    return (
-      <Document>
-        {groups.map((g, idx) => (
-          <ReportPage
-            key={idx}
-            rows={g.rows}
-            periodoInicio={periodoInicio}
-            periodoFim={periodoFim}
-            funcionarioNome={g.funcionarioNome}
-            emitidoEm={emitidoEm}
-            totalValor={g.totalValor}
-            logoBase64={logoBase64}
-            year={year}
-            showFuncCol={false}
-          />
-        ))}
-      </Document>
-    );
-  }
-
+export function ReportTemplate({ plantoes, filtrosText, emitidoEm, logoBase64 }: ReportTemplateProps) {
   return (
     <Document>
-      <ReportPage
-        rows={rows}
-        periodoInicio={periodoInicio}
-        periodoFim={periodoFim}
-        funcionarioNome={funcionarioNome}
-        emitidoEm={emitidoEm}
-        totalValor={totalValor}
-        logoBase64={logoBase64}
-        year={year}
-        showFuncCol={funcionarioNome === 'Todos'}
-      />
+      <Page size="A4" style={s.page}>
+        
+        <View style={s.headerContainer}>
+          {logoBase64 ? <Image style={s.logoImg} src={logoBase64} /> : <View style={{ width: 80 }} />}
+          <Text style={s.headerTitle}>Relatório gerencial dos plantões</Text>
+          <Text style={s.headerDate}>{emitidoEm.split(' às ')[0]}</Text>
+        </View>
+
+        <View style={s.filterLine}>
+          <Text style={s.filterText}>
+            <Text style={s.filterLabel}>Filtro: </Text>
+            {filtrosText}
+          </Text>
+        </View>
+
+        {plantoes.map((p, idx) => (
+          <View key={idx} style={s.plantaoBlock} wrap={false}>
+            
+            <View style={s.metaContainer}>
+              <View style={s.metaCol}>
+                <View style={s.metaRow}>
+                  <Text style={s.metaLabel}>Plantão:</Text>
+                  <Text style={s.metaValue}>{p.id}</Text>
+                </View>
+                <View style={s.metaRow}>
+                  <Text style={s.metaLabel}>Funcionário:</Text>
+                  <Text style={s.metaValue}>{p.colaborador}</Text>
+                </View>
+                <View style={s.metaRow}>
+                  <Text style={s.metaLabel}>Valor:</Text>
+                  <Text style={s.metaValue}>{p.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</Text>
+                </View>
+              </View>
+              <View style={s.metaCol}>
+                <View style={s.metaRow}>
+                  <Text style={s.metaLabel}>Período:</Text>
+                  <Text style={s.metaValue}>{p.periodoInicio} a {p.periodoFim}</Text>
+                </View>
+                <View style={s.metaRow}>
+                  <Text style={s.metaLabel}>Status:</Text>
+                  <Text style={s.metaValue}>{p.status}</Text>
+                </View>
+              </View>
+            </View>
+
+            <Text style={s.tableTitle}>Detalhamento do Plantão</Text>
+            <View>
+              <View style={s.tableHeader}>
+                <Text style={[s.thCell, { width: COL.data }]}>Data</Text>
+                <Text style={[s.thCell, { width: COL.dia }]}>Dia da Semana</Text>
+                <Text style={[s.thCell, { width: COL.obs }]}>Observação</Text>
+                <Text style={[s.thCell, s.tdRight, { width: COL.valor }]}>Valor do Dia</Text>
+              </View>
+
+              {p.dias.map((d, i) => (
+                <View key={i} style={s.tableRow}>
+                  <Text style={[s.tdCell, { width: COL.data }]}>{d.data}</Text>
+                  <Text style={[s.tdCell, { width: COL.dia }]}>{d.diaSemana}</Text>
+                  <Text style={[s.tdCell, { width: COL.obs }]}>{d.observacao}</Text>
+                  <Text style={[s.tdCell, s.tdRight, { width: COL.valor }]}>
+                    {d.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </Text>
+                </View>
+              ))}
+
+              <View style={s.tableFoot}>
+                <Text style={[s.tfLabel, { width: '85%' }]}>Valor Total</Text>
+                <Text style={[s.tfValue, { width: COL.valor }]}>
+                  {p.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </Text>
+              </View>
+            </View>
+
+            <View style={s.signatureWrap}>
+              <View style={s.signatureLine} />
+              <Text style={s.signatureText}>{p.colaborador}</Text>
+            </View>
+
+          </View>
+        ))}
+
+        <View style={s.footer} fixed>
+          <Text style={s.footerL2}>Gerado automaticamente pelo sistema de gestão de plantões</Text>
+        </View>
+      </Page>
     </Document>
   );
 }
