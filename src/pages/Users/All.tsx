@@ -1,29 +1,22 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, User, IdCard, Hash, Activity, LayoutGrid, Loader2 } from 'lucide-react';
+import { Activity, Loader2, UserPlus, ShieldCheck, Mail, Trash2 } from 'lucide-react';
+import { Button } from '../../components/Button';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { SearchBar } from '../../components/SearchBar';
-import { collaboratorService } from '../../services/collaboratorService';
-
-interface Collaborator {
-  id: string;
-  nome: string;
-  email: string;
-  telefone: string;
-  cargo: string;
-  setor: string;
-  foto_url: string;
-  status: 'ativo' | 'desativo';
-  ativo_plantao: 'ativo' | 'inativo';
-  data_admissao: string;
-  // Campos calculados para exibição na tabela
-  displayStatus: string;
-  displayCode: string;
-}
+import { DataTable } from '../../components/DataTable';
+import { collaboratorService, type Collaborator } from '../../services/collaboratorService';
+import { authService } from '../../services/authService';
+import { conviteService } from '../../services/conviteService';
+import api from '../../services/api';
 
 export function All() {
   const navigate = useNavigate();
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
+  const [colabsComUsuario, setColabsComUsuario] = useState<Set<string>>(new Set());
+  const [selected, setSelected] = useState<Collaborator | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
   const { searchTerm, setSearchTerm } = useOutletContext<{
@@ -34,50 +27,74 @@ export function All() {
   useEffect(() => {
     async function loadCollaborators() {
       try {
-        const savedUserRaw = localStorage.getItem('@Intellisys:user');
-
-        if (!savedUserRaw || savedUserRaw === "undefined" || savedUserRaw === "null") {
-          console.warn("Sessão inválida ou expirada.");
-          setIsAdmin(false);
-          setLoading(false);
-          return;
-        }
-
-        const user = JSON.parse(savedUserRaw);
-
-        const userIsAdmin = user?.role === 'admin';
+        const usuario = await authService.getUsuario();
+        const userIsAdmin = usuario?.role?.toLowerCase() === 'admin';
         setIsAdmin(userIsAdmin);
+        if (!userIsAdmin) return;
 
-        if (!userIsAdmin) {
-          setLoading(false);
-          return;
-        }
+        const [data, usuarios] = await Promise.all([
+          collaboratorService.getAll(),
+          api.get('/admin/all'),
+        ]);
 
-        const data = await collaboratorService.getAll();
-        
-        const formattedData = data.map((c: any) => ({
-          ...c,
-          displayStatus: c.status === 'ativo' ? 'Ativo' : 'Desativo',
-          displayCode: c.id ? c.id.split('-')[0].toUpperCase() : 'N/A'
-        }));
+        const idsComUsuario = new Set<string>(
+          usuarios.data.map((u: any) => u.id_colaborador).filter(Boolean)
+        );
 
-        setCollaborators(formattedData);
-      } catch (error) {
-        console.error("Erro ao buscar colaboradores do Docker:", error);
+        setCollaborators(data);
+        setColabsComUsuario(idsComUsuario);
+      } catch {
+        // erro silencioso
       } finally {
         setLoading(false);
       }
     }
-
     loadCollaborators();
-  }, [navigate]);
+  }, []);
 
-  const filteredCollaborators = collaborators.filter(c => 
-    c.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const filtered = collaborators.filter(c =>
+    c.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Tela de bloqueio caso não seja admin
+  const handleRowClick = (c: Collaborator) => {
+    setSelected(prev => prev?.id === c.id ? null : c);
+  };
+
+  const handleCriarUsuario = async () => {
+    if (!selected) return;
+    try {
+      setSending(true);
+      await conviteService.criar(selected.id, selected.email, selected.nome);
+      alert(`Convite enviado para ${selected.email}`);
+      setColabsComUsuario(prev => new Set(prev).add(selected.id));
+      setSelected(null);
+    } catch {
+      alert('Erro ao enviar convite. Tente novamente.');
+      // mantém o registro selecionado para o usuário poder tentar novamente
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const selectedTemUsuario = selected ? colabsComUsuario.has(selected.id) : false;
+  const canCreateUser = isAdmin && selected !== null && !selectedTemUsuario;
+
+  const handleDelete = async () => {
+    if (!selected) return;
+    if (!confirm(`Excluir colaborador ${selected.nome}? Esta ação não pode ser desfeita.`)) return;
+    setDeleting(true);
+    try {
+      await collaboratorService.delete(selected.id);
+      setCollaborators(prev => prev.filter(c => c.id !== selected.id));
+      setSelected(null);
+    } catch (err: any) {
+      alert(err?.response?.data?.error || err?.response?.data?.message || 'Erro ao excluir colaborador.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (!loading && !isAdmin) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center">
@@ -88,8 +105,8 @@ export function All() {
         <p className="text-gray-500 mt-2 max-w-xs text-sm">
           Sua conta não possui privilégios de Administrador para gerenciar a equipe.
         </p>
-        <button 
-          onClick={() => navigate('/home')} 
+        <button
+          onClick={() => navigate('/home')}
           className="mt-6 bg-[#1E293B] text-white px-8 py-2 rounded-lg font-bold text-xs shadow-md active:scale-95 transition-all"
         >
           VOLTAR AO INÍCIO
@@ -100,18 +117,14 @@ export function All() {
 
   return (
     <div className="p-4 md:p-12 bg-white min-h-full font-inter flex flex-col pt-6">
-      
+
       {/* HEADER DA PÁGINA */}
-      <div className="flex flex-col items-center mb-6 md:mb-8 max-w-5xl mx-auto w-full">
-        <div className="flex items-center justify-between w-full mb-4 md:mb-2 px-2 md:px-0">
-          <button onClick={() => navigate('/home')} className="text-gray-800 hover:opacity-70 transition-opacity outline-none">
-            <ArrowLeft size={window.innerWidth < 768 ? 24 : 32} />
-          </button>
+      <div className="flex flex-col items-center mb-6 md:mb-8 max-w-7xl mx-auto w-full">
+        <div className="flex items-center justify-center w-full mb-4 md:mb-2">
           <div className="text-center">
             <h2 className="text-xl md:text-2xl font-bold text-[#B5071A]">Colaboradores</h2>
-            <p className="text-[12px] md:text-sm text-gray-500 font-medium tracking-tight">Gerencie sua equipe e permissões.</p>
+            <p className="text-[10px] md:text-sm text-gray-500 font-medium">Gerencie sua equipe e permissões.</p>
           </div>
-          <div className="w-8 md:w-10"></div>
         </div>
 
         <div className="w-full md:hidden px-2">
@@ -119,107 +132,105 @@ export function All() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto w-full flex-grow flex flex-col overflow-hidden">
-        
+      <div className="max-w-7xl mx-auto w-full flex-grow flex flex-col">
+
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Loader2 size={32} className="text-[#B5071A] animate-spin" />
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Sincronizando com Docker...</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Carregando colaboradores...</p>
           </div>
         ) : (
           <>
-            {/* CABEÇALHO TABELA (Desktop) */}
-            <div className="hidden md:grid grid-cols-[60px_1fr_2fr_1fr_1fr_60px] gap-4 px-4 mb-6 text-gray-400">
-              <div></div> 
-              <div className="flex flex-col items-center gap-1">
-                <User size={22} /><span className="text-[10px] font-bold uppercase">Email / Login</span>
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <IdCard size={22} /><span className="text-[10px] font-bold uppercase">Nome</span>
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <Hash size={22} /><span className="text-[10px] font-bold uppercase">Código</span>
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <Activity size={22} /><span className="text-[10px] font-bold uppercase">Status</span>
-              </div>
-              <div className="flex items-center justify-center">
-                <LayoutGrid size={22} className="text-[#B5071A]" />
-              </div>
-            </div>
-
-            {/* LISTA DE COLABORADORES COM SCROLL */}
-            <div className="max-h-[45vh] md:max-h-[380px] overflow-y-auto pr-2 custom-scrollbar space-y-3 md:space-y-4">
-              {filteredCollaborators.map((collaborator) => (
-                <div 
-                  key={collaborator.id}
-                  onClick={() => navigate(`/users/details/${collaborator.id}`)}
-                  className="flex flex-col md:grid md:grid-cols-[60px_1fr_2fr_1fr_1fr_60px] gap-3 md:gap-4 items-start md:items-center bg-white border border-gray-100 rounded-xl p-4 md:p-5 shadow-sm hover:border-[#B5071A]/50 transition-all cursor-pointer group"
-                >
-                  <div className="flex w-full md:w-auto justify-between items-center md:justify-center border-b md:border-none pb-2 md:pb-0 mb-2 md:mb-0">
-                    <input type="checkbox" className="w-5 h-5 accent-[#B5071A]" onClick={(e) => e.stopPropagation()} />
-                    <span className={`md:hidden text-[10px] font-bold px-2 py-1 rounded uppercase ${collaborator.status === 'ativo' ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-600'}`}>
-                      {collaborator.displayStatus}
+            <DataTable<Collaborator>
+              columns={[
+                { header: 'Código' },
+                { header: 'Nome' },
+                { header: 'Cargo' },
+                { header: 'Setor' },
+                { header: 'Status', className: 'text-center' },
+              ]}
+              gridCols="grid-cols-[0.5fr_1fr_1fr_0.5fr_100px]"
+              items={filtered}
+              rowKey={c => c.id}
+              emptyMessage="Nenhum colaborador encontrado."
+              maxHeight="400px"
+              containerClassName="mb-6"
+              onRowClick={handleRowClick}
+              onRowDoubleClick={c => navigate(`/users/details/${c.id}`)}
+              isRowSelected={c => selected?.id === c.id}
+              renderRow={c => (
+                <>
+                  <span className="text-sm font-bold text-gray-400">{c.id.split('-')[0].toUpperCase()}</span>
+                  <span className="text-xs font-bold text-gray-700 uppercase">{c.nome}</span>
+                  <span className="text-xs font-medium text-gray-600">{c.cargo}</span>
+                  <span className="text-xs font-medium text-gray-600">{c.setor}</span>
+                  <div className="flex justify-center">
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${c.status === 'ativo' ? 'text-green-600 bg-green-50' : 'text-gray-500 bg-gray-100'}`}>
+                      {c.status === 'ativo' ? 'Ativo' : 'Inativo'}
                     </span>
                   </div>
-
-                  <div className="flex flex-col md:block overflow-hidden">
-                    <span className="md:hidden text-[9px] text-gray-400 font-bold uppercase">Email</span>
-                    <div className="text-sm md:text-center md:text-xs font-bold text-gray-700 truncate">{collaborator.email}</div>
-                  </div>
-
-                  <div className="flex flex-col md:block overflow-hidden">
-                    <span className="md:hidden text-[9px] text-gray-400 font-bold uppercase">Nome</span>
-                    <div className="text-sm md:text-center md:text-xs font-bold text-gray-700 uppercase truncate w-full">{collaborator.nome}</div>
-                  </div>
-
-                  <div className="flex flex-col md:block">
-                    <span className="md:hidden text-[9px] text-gray-400 font-bold uppercase">Código</span>
-                    <div className="text-sm md:text-center md:text-xs font-bold text-gray-500">{collaborator.displayCode}</div>
-                  </div>
-
-                  <div className="hidden md:block text-center text-xs font-bold text-gray-700 uppercase">
-                    <span className={collaborator.status === 'ativo' ? 'text-green-600' : 'text-gray-400'}>
-                      {collaborator.displayStatus}
-                    </span>
-                  </div>
-
-                  <div className="hidden md:flex justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <LayoutGrid size={18} className="text-[#B5071A]" />
-                  </div>
-                </div>
-              ))}
-              
-              {filteredCollaborators.length === 0 && (
-                <div className="text-center py-10 text-gray-400 text-sm font-medium">
-                  Nenhum colaborador encontrado com este termo.
-                </div>
+                </>
               )}
-            </div>
+              renderMobileCard={c => (
+                <>
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="text-[10px] font-bold text-gray-400">CÓD: {c.id.split('-')[0].toUpperCase()}</span>
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${c.status === 'ativo' ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500'}`}>
+                      {c.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </div>
+                  <p className="text-sm font-bold text-gray-700 uppercase">{c.nome}</p>
+                  <p className="text-[11px] text-gray-500">{c.cargo} — {c.setor}</p>
+                </>
+              )}
+            />
+            {filtered.length > 2 && (
+              <div className="md:hidden text-center py-2">
+                <div className="w-8 h-1 bg-gray-200 rounded-full mx-auto animate-pulse"></div>
+              </div>
+            )}
           </>
         )}
 
         {/* BOTÕES DE AÇÃO */}
-        <div className="flex flex-col md:flex-row justify-end gap-3 mt-8 md:mt-10 pb-6">
-          <button className="w-full md:w-auto bg-[#B5071A] text-white px-12 py-3 md:py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest shadow-md active:scale-95 transition-all">
-            Incluir
-          </button>
-          <button className="w-full md:w-auto bg-[#B5071A] text-white px-12 py-3 md:py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest shadow-md active:scale-95 transition-all">
-            Alterar
-          </button>
-          <button 
-            onClick={() => navigate('/home')} 
-            className="w-full md:w-auto bg-[#1E293B] text-white px-12 py-3 md:py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest shadow-md active:scale-95 transition-all"
-          >
-            Voltar
-          </button>
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 md:relative md:border-none md:p-0 md:mt-6">
+          <div className="max-w-7xl mx-auto flex justify-end gap-2 md:gap-3">
+            {isAdmin && (
+              <Button
+                label={sending ? 'Enviando...' : 'Convidar'}
+                icon={<UserPlus size={14} />}
+                disabled={!canCreateUser || sending}
+                onClick={handleCriarUsuario}
+                className={!canCreateUser ? 'opacity-30 cursor-not-allowed' : ''}
+              />
+            )}
+           <Button label="Incluir" onClick={() => navigate('/users/create')} />
+            {isAdmin && (
+              <Button label="Convites" icon={<Mail size={14} />} onClick={() => navigate('/convites')} />
+            )}
+            {isAdmin && (
+              <Button label="Permissões" icon={<ShieldCheck size={14} />} onClick={() => navigate('/users/permissions')} />
+            )}
+            <Button
+              label="Editar"
+              disabled={!selected}
+              onClick={() => selected && navigate(`/users/edit/${selected.id}`)}
+              className={!selected ? 'opacity-30 cursor-not-allowed' : ''}
+            />
+            {isAdmin && (
+              <Button
+                label={deleting ? 'Excluindo...' : 'Excluir'}
+                icon={deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                variant="secondary"
+                disabled={!selected || deleting}
+                className={!selected ? 'opacity-30 cursor-not-allowed' : ''}
+                onClick={handleDelete}
+              />
+            )}
+            <Button label="Voltar" variant="secondary" onClick={() => navigate('/home')} />
+          </div>
         </div>
       </div>
-
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d9d9d9; border-radius: 16px; }
-      `}</style>
     </div>
   );
 }

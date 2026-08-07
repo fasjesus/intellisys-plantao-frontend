@@ -1,131 +1,137 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import logo from '../assets/images/logo.png';
-import { Input } from '../components/Input';
-import { Button } from '../components/Button';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { authService } from '../services/authService';
+import logo from '../assets/images/logo.png';
 
 export function Login() {
   const navigate = useNavigate();
-  
-  // Estados para os campos e controle de interface
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     setError(null);
-
     if (!email.trim() || !password.trim()) {
-      setError("Por favor, preencha todos os campos antes de continuar.");
+      setError("Preencha todos os campos antes de continuar.");
       return;
     }
-
     setLoading(true);
-
     try {
-
-      await authService.login({ 
-        email: email.trim(), 
-        senha: password 
-      });
-
-      navigate('/home'); 
+      await authService.login({ email: email.trim(), senha: password });
+      const colaboradorRaw = localStorage.getItem('@Intellisys:colaborador');
+      const colaborador = colaboradorRaw ? JSON.parse(colaboradorRaw) : null;
+      if (colaborador && colaborador.status?.toLowerCase() === 'inativo') {
+        authService.logout();
+        setError("Sua conta está inativa. Entre em contato com o administrador.");
+        return;
+      }
+      navigate('/home');
     } catch (err: any) {
-      console.error("Erro na autenticação:", err);
-
-      const apiErrorMessage = err.response?.data?.message || "E-mail ou senha incorretos. Tente novamente.";
-      setError(apiErrorMessage);
+      setError(err.response?.data?.message || "E-mail ou senha incorretos.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col font-sans bg-white">
-      {/* HEADER DA INTELLISYS */}
-      <header className="relative h-18 md:h-20 flex items-center justify-between px-6 md:px-10 bg-white shadow-md z-30">
-        <div className="z-10 shrink-0">
-          <img src={logo} alt="Intellisys" className="h-6 md:h-8 w-auto object-contain" />
-        </div>
-        
-        {/* Faixas Diagonais Visuais */}
-        <div className="absolute right-0 top-0 h-full w-[78%] bg-[#B5071A] diagonal-bg hidden md:block"></div>
-        <div className="absolute right-0 top-0 h-full w-[40%] bg-[#B5071A] diagonal-bg flex md:hidden items-center justify-end px-4 gap-4"></div>
-      </header>
+    <div className="min-h-screen flex items-center justify-center bg-[#f5f5f5] font-inter px-4 relative overflow-hidden">
 
-      <main className="flex-grow flex flex-col items-center justify-center px-6 py-10">
-        {/* TÍTULO E BOAS-VINDAS */}
-        <div className="text-center mb-8 max-w-[90%]">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 font-montserrat">
-            Acesse seu <span className="text-[#B5071A]">Perfil</span>
-          </h1>
-          <p className="text-gray-500 text-sm mt-2 leading-relaxed">
-            Acesse aqui seu perfil para conferir plantões e muito mais.
-          </p>
-        </div>
+      {/* GRID DE FUNDO COM FADE NAS BORDAS */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: 'radial-gradient(circle, #999999 1.5px, transparent 1.5px)',
+          backgroundSize: '24px 24px',
+          maskImage: 'radial-gradient(ellipse 60% 60% at 50% 50%, black 20%, transparent 100%)',
+          WebkitMaskImage: 'radial-gradient(ellipse 60% 60% at 50% 50%, black 20%, transparent 100%)',
+          opacity: 0.25,
+        }}
+      />
+      <div className="w-full max-w-sm relative z-10">
 
-        {/* CARD DE LOGIN */}
-        <div className="bg-gray-100 p-8 md:p-10 rounded-2xl shadow-sm w-full max-w-[450px]">
-          <form className="space-y-6" onSubmit={handleLogin}>
-            
-            {/* Exibição de erro caso a API falhe */}
+        {/* CARD */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 px-8 py-10">
+
+          <div className="flex justify-center mb-8">
+            <motion.img layoutId="app-logo" src={logo} alt="Intellisys" className="h-8 w-auto object-contain" />
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-5">
+
             {error && (
-              <div className="bg-red-50 border border-red-200 text-[#B5071A] text-xs p-3 rounded-lg font-bold text-center animate-pulse">
+              <div className="bg-red-50 border border-red-100 text-[#B5071A] text-xs px-4 py-3 rounded-xl font-medium">
                 {error}
               </div>
             )}
 
-            <Input 
-              label="E-mail" 
-              placeholder="Digite seu email" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={loading}
-              required
-            />
-
-            <div className="flex flex-col gap-1">
-              <Input 
-                label="Senha" 
-                isPassword 
-                placeholder="Digite sua senha" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+            {/* E-MAIL */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">E-mail</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="seu@email.com"
                 disabled={loading}
                 required
-              />  
+                className="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 placeholder:text-gray-300 focus:border-[#B5071A] focus:bg-white outline-none transition-all disabled:opacity-50 shadow-sm"
+              />
+            </div>
 
-              <div className="flex justify-end pr-1 mt-1">
-                <button 
+            {/* SENHA */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Senha</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  disabled={loading}
+                  required
+                  className="w-full h-11 px-4 pr-11 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 placeholder:text-gray-300 focus:border-[#B5071A] focus:bg-white outline-none transition-all disabled:opacity-50 shadow-sm"
+                />
+                <button
                   type="button"
-                  onClick={() => navigate('/recovery')} 
-                  className="text-[10px] md:text-xs text-gray-400 hover:text-[#B5071A] transition-colors font-medium underline-offset-4 hover:underline"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors"
                 >
-                  Esqueceu sua senha? <span className="font-bold">Clique aqui</span>
+                  {showPassword ? <EyeOff size={18} strokeWidth={1.5} /> : <Eye size={18} strokeWidth={1.5} />}
+                </button>
+              </div>
+              <div className="flex justify-end mt-0.5">
+                <button
+                  type="button"
+                  onClick={() => navigate('/recovery')}
+                  className="text-[11px] text-gray-400 hover:text-[#B5071A] transition-colors hover:underline underline-offset-4"
+                >
+                  Esqueceu sua senha?
                 </button>
               </div>
             </div>
 
-            <div className="flex justify-center pt-2 w-full">
-              <div className="w-full flex justify-center">
-                <Button 
-                  label={loading ? "Autenticando..." : "Entrar"} 
-                  type="submit" 
-                  disabled={loading}
-                />
-              </div>
-            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full h-11 bg-[#B5071A] hover:bg-[#9a0615] text-white font-bold text-sm rounded-xl transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 mt-1 shadow-md"
+            >
+              {loading && <Loader2 size={16} className="animate-spin" />}
+              {loading ? 'Autenticando...' : 'Entrar'}
+            </button>
+
           </form>
         </div>
-      </main>
 
-      {/* FOOTER INTELLISYS */}
-      <footer className="bg-[#545454] text-white py-6 text-center text-[10px] md:text-sm tracking-wide px-4">
-        Intellisys Informática Ltda / Todos os direitos reservados (c) 2026
-      </footer>
+        <p className="text-center text-[11px] text-gray-400 mt-6">
+          Intellisys Informática Ltda &copy; 2026
+        </p>
+
+      </div>
     </div>
   );
 }

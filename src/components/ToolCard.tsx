@@ -8,18 +8,14 @@ interface ToolCardProps {
 
 export function ToolCard({ label, icon, onClick }: ToolCardProps) {
   return (
-    <button 
+    <button
       onClick={onClick}
-      className="flex flex-col items-center group cursor-pointer border-none bg-transparent outline-none focus:ring-2 focus:ring-intellisys-red rounded-xl p-2 transition-all"
+      className="w-full flex flex-col items-center justify-center gap-5 group cursor-pointer border border-gray-100 outline-none rounded-2xl py-10 px-6 shadow-md bg-gradient-to-br from-white to-gray-50 hover:from-[#B5071A] hover:to-[#8a0514] hover:border-[#B5071A] hover:shadow-xl active:scale-95 transition-all duration-150"
     >
-      {/* Círculo do Ícone */}
-      <div className="w-24 h-24 rounded-full border-2 border-[#B5071A] flex items-center justify-center text-[#B5071A] shadow-md group-hover:bg-[#B5071A] group-hover:text-white group-active:scale-95 transition-all duration-300">
-        {/* O ícone passado via props é renderizado aqui */}
+      <div className="text-[#B5071A] group-hover:text-white transition-colors duration-100">
         {icon}
       </div>
-
-      {/* Rótulo do Ícone */}
-      <span className="mt-4 text-[#1E1E1E] font-inter font-medium text-lg group-hover:text-[#B5071A] transition-colors">
+      <span className="text-[#1E1E1E] font-inter font-medium text-lg group-hover:text-white transition-colors duration-100 text-center w-full">
         {label}
       </span>
     </button>
