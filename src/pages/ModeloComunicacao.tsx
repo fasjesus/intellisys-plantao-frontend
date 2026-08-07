@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Loader2, Save, Plus, Pencil, X, FileText } from 'lucide-react';
 import { Button } from '../components/Button';
+import { DataTable } from '../components/DataTable';
 import api from '../services/api';
 
 // 1. ADICIONADO 'ativo' NA INTERFACE
@@ -117,58 +118,36 @@ export function ModeloComunicacao() {
             <p className="text-gray-400 text-xs">Crie o primeiro modelo de comunicação.</p>
           </div>
         ) : !showForm ? (
-          <>
-            {/* DESKTOP */}
-            <div className="hidden md:block border border-gray-100 rounded-xl overflow-hidden shadow-sm bg-white mb-6">
-              <div className="grid grid-cols-[1.5fr_1fr_1.5fr] bg-gray-50 border-b border-gray-100 px-6 py-4">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Nome</span>
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tipo</span>
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Assunto</span>
-              </div>
-              <div className="max-h-[420px] overflow-y-auto custom-scrollbar divide-y divide-gray-50">
-                {modelos.map(m => {
-                  const isSelected = selected?.id === m.id;
-                  return (
-                    <div
-                      key={m.id}
-                      onClick={() => setSelected(prev => prev?.id === m.id ? null : m)}
-                      className={[
-                        'grid grid-cols-[1.5fr_1fr_1.5fr] px-6 py-4 items-center transition-colors cursor-pointer',
-                        isSelected ? 'bg-red-50 border-l-2 border-l-[#B5071A]' : 'hover:bg-gray-50',
-                      ].join(' ')}
-                    >
-                      <span className="text-xs font-bold text-gray-700 truncate">{m.nome}</span>
-                      <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded-full w-fit truncate">{m.tipo_comunicacao}</span>
-                      <span className="text-xs text-gray-500 truncate">{m.assunto}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* MOBILE */}
-            <div className="md:hidden space-y-3 pb-28">
-              {modelos.map(m => {
-                const isSelected = selected?.id === m.id;
-                return (
-                  <div
-                    key={m.id}
-                    onClick={() => setSelected(prev => prev?.id === m.id ? null : m)}
-                    className={[
-                      'border rounded-xl p-4 shadow-sm cursor-pointer transition-all',
-                      isSelected ? 'bg-red-50 border-[#B5071A]' : 'bg-gray-50 border-gray-100',
-                    ].join(' ')}
-                  >
-                    <div className="flex justify-between items-start mb-1">
-                      <span className="text-sm font-bold text-gray-700">{m.nome}</span>
-                      <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded-full">{m.tipo_comunicacao}</span>
-                    </div>
-                    <p className="text-[11px] text-gray-500 truncate">{m.assunto}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </>
+          <DataTable<Modelo>
+            columns={[
+              { header: 'Nome' },
+              { header: 'Tipo' },
+              { header: 'Assunto' },
+            ]}
+            gridCols="grid-cols-[1.5fr_1fr_1.5fr]"
+            items={modelos}
+            rowKey={m => m.id}
+            emptyMessage="Nenhum modelo cadastrado."
+            containerClassName="mb-6"
+            onRowClick={m => setSelected(prev => prev?.id === m.id ? null : m)}
+            isRowSelected={m => selected?.id === m.id}
+            renderRow={m => (
+              <>
+                <span className="text-xs font-bold text-gray-700 truncate">{m.nome}</span>
+                <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded-full w-fit truncate">{m.tipo_comunicacao}</span>
+                <span className="text-xs text-gray-500 truncate">{m.assunto}</span>
+              </>
+            )}
+            renderMobileCard={m => (
+              <>
+                <div className="flex justify-between items-start mb-1">
+                  <span className="text-sm font-bold text-gray-700">{m.nome}</span>
+                  <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded-full">{m.tipo_comunicacao}</span>
+                </div>
+                <p className="text-[11px] text-gray-500 truncate">{m.assunto}</p>
+              </>
+            )}
+          />
         ) : (
           /* FORMULÁRIO */
           <div className="max-w-2xl mx-auto w-full">
@@ -302,11 +281,6 @@ export function ModeloComunicacao() {
           </div>
         )}
       </div>
-
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d9d9d9; border-radius: 10px; }
-      `}</style>
     </div>
   );
 }

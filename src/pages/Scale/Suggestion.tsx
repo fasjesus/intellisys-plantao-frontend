@@ -1,19 +1,21 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, RefreshCw, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Check, RefreshCw, ChevronLeft, ChevronRight, Loader2, Lock } from 'lucide-react';
 import { collaboratorService, type Collaborator } from '../../services/collaboratorService';
 import { scaleService } from '../../services/scaleService';
 import { dutyService } from '../../services/dutyService';
 import { Button } from '../../components/Button';
 
+const MIN_BLOCO_DIAS = 7;
+
 interface Bloco {
-  inicio: number;
-  fim: number;
+  inicio: Date;
+  fim: Date;
   collaborator: Collaborator;
 }
 
 interface DayEntry {
-  day: number;
+  date: Date;
   weekDayIdx: number;
   blocoIdx: number;
   collaborator: Collaborator;
@@ -23,6 +25,9 @@ interface DayEntry {
 
 const daysOfWeek = ["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"];
 const pad = (n: number) => String(n).padStart(2, '0');
+const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+const diffDays = (a: Date, b: Date) => Math.round((b.getTime() - a.getTime()) / 86400000) + 1;
+const formatShort = (d: Date) => `${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
 
 export function Suggestion() {
   const navigate = useNavigate();
@@ -33,11 +38,15 @@ export function Suggestion() {
   const [confirming, setConfirming] = useState(false);
   const [staffOffset, setStaffOffset] = useState(0);
   const [selectedBlocos, setSelectedBlocos] = useState<Set<number>>(new Set());
+  const [herdado, setHerdado] = useState<{ fim: Date; nomeColaborador: string } | null>(null);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const monthName = new Intl.DateTimeFormat('pt-BR', { month: 'long' }).format(currentDate);
   const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+
+  const monthStart = useMemo(() => new Date(year, month, 1), [year, month]);
+  const monthEnd = useMemo(() => new Date(year, month + 1, 0), [year, month]);
 
   useEffect(() => {
     setStaffOffset(0);
@@ -45,16 +54,39 @@ export function Suggestion() {
     async function load() {
       setLoading(true);
       try {
-        const [colaboradores, feriados] = await Promise.all([
+        const prevMonthStart = new Date(year, month - 1, 1);
+        const [colaboradores, feriados, plantoesOverlap] = await Promise.all([
           collaboratorService.getAll(),
           scaleService.getFeriados(year),
+          dutyService.getByPeriod(
+            `${prevMonthStart.getFullYear()}-${pad(prevMonthStart.getMonth() + 1)}-01`,
+            `${year}-${pad(month + 1)}-${pad(monthEnd.getDate())}`,
+          ),
         ]);
         setStaff(colaboradores.filter(c => c.ativo_plantao === 'ativo' && c.status === 'ativo'));
+
         const map: Record<string, string> = {};
         if (Array.isArray(feriados)) {
           feriados.forEach(f => { map[f.data.split('T')[0]] = f.nome; });
         }
         setHolidays(map);
+
+        // Detecta plantão já confirmado que começou antes deste mês e invade seus primeiros dias.
+        const colabMap: Record<string, string> = {};
+        colaboradores.forEach(c => { colabMap[c.id] = c.nome; });
+        let carriedOver: { fim: Date; nomeColaborador: string } | null = null;
+        if (Array.isArray(plantoesOverlap)) {
+          for (const p of plantoesOverlap) {
+            const inicio = new Date(p.periodo.Inicio);
+            const fim = new Date(p.periodo.Fim);
+            if (inicio < monthStart && fim >= monthStart) {
+              if (!carriedOver || fim > carriedOver.fim) {
+                carriedOver = { fim, nomeColaborador: colabMap[p.colaborador_id] ?? '—' };
+              }
+            }
+          }
+        }
+        setHerdado(carriedOver);
       } catch {
         // mantém vazio
       } finally {
@@ -62,26 +94,30 @@ export function Suggestion() {
       }
     }
     load();
-  }, [year, month]);
+  }, [year, month, monthStart, monthEnd]);
 
   const blocos = useMemo<Bloco[]>(() => {
     if (staff.length === 0) return [];
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
     const result: Bloco[] = [];
-    let day = 1;
+    let inicio = herdado ? addDays(herdado.fim, 1) : new Date(monthStart);
+    if (inicio > monthEnd) return result;
     let idx = 0;
-    while (day <= daysInMonth) {
-      const fim = Math.min(day + 6, daysInMonth);
+    while (inicio <= monthEnd) {
+      let fim = addDays(inicio, MIN_BLOCO_DIAS - 1);
+      // Garante no mínimo 7 dias mesmo que ultrapasse o fim do mês exibido.
+      if (fim < monthEnd && diffDays(inicio, monthEnd) < MIN_BLOCO_DIAS) {
+        fim = addDays(inicio, MIN_BLOCO_DIAS - 1);
+      }
       result.push({
-        inicio: day,
-        fim,
+        inicio: new Date(inicio),
+        fim: new Date(fim),
         collaborator: staff[(idx + staffOffset) % staff.length],
       });
-      day = fim + 1;
+      inicio = addDays(fim, 1);
       idx++;
     }
     return result;
-  }, [staff, year, month, staffOffset]);
+  }, [staff, monthStart, monthEnd, staffOffset, herdado]);
 
   useEffect(() => {
     setSelectedBlocos(new Set(blocos.map((_, i) => i)));
@@ -91,27 +127,40 @@ export function Suggestion() {
     const days: DayEntry[] = [];
     for (let bi = 0; bi < blocos.length; bi++) {
       const bloco = blocos[bi];
-      for (let d = bloco.inicio; d <= bloco.fim; d++) {
-        let dayIdx = new Date(year, month, d).getDay();
+      let d = new Date(bloco.inicio);
+      while (d <= bloco.fim) {
+        let dayIdx = d.getDay();
         dayIdx = dayIdx === 0 ? 6 : dayIdx - 1;
-        const dateKey = `${year}-${pad(month + 1)}-${pad(d)}`;
+        const dateKey = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
         days.push({
-          day: d,
+          date: new Date(d),
           weekDayIdx: dayIdx,
           blocoIdx: bi,
           collaborator: bloco.collaborator,
           isHoliday: !!holidays[dateKey],
           holidayName: holidays[dateKey],
         });
+        d = addDays(d, 1);
       }
     }
     return days;
-  }, [blocos, holidays, year, month]);
+  }, [blocos, holidays]);
+
+  const herdadoDays = useMemo<Date[]>(() => {
+    if (!herdado) return [];
+    const days: Date[] = [];
+    let d = new Date(monthStart);
+    while (d <= herdado.fim && d <= monthEnd) {
+      days.push(new Date(d));
+      d = addDays(d, 1);
+    }
+    return days;
+  }, [herdado, monthStart, monthEnd]);
 
   const firstDayIdx = useMemo(() => {
-    const d = new Date(year, month, 1).getDay();
+    const d = monthStart.getDay();
     return d === 0 ? 6 : d - 1;
-  }, [year, month]);
+  }, [monthStart]);
 
   const toggleBloco = (i: number) => {
     setSelectedBlocos(prev => {
@@ -134,8 +183,8 @@ export function Suggestion() {
         toCreate.map(b => dutyService.create({
           colaborador_id: b.collaborator.id,
           periodo: {
-            inicio: `${year}-${pad(month + 1)}-${pad(b.inicio)}T12:00:00Z`,
-            fim: `${year}-${pad(month + 1)}-${pad(b.fim)}T12:00:00Z`,
+            inicio: `${b.inicio.getFullYear()}-${pad(b.inicio.getMonth() + 1)}-${pad(b.inicio.getDate())}T12:00:00Z`,
+            fim: `${b.fim.getFullYear()}-${pad(b.fim.getMonth() + 1)}-${pad(b.fim.getDate())}T12:00:00Z`,
           },
         }))
       );
@@ -177,6 +226,15 @@ export function Suggestion() {
           </div>
         ) : (
           <>
+            {herdado && (
+              <div className="mb-4 flex items-center gap-2 border border-gray-100 rounded-xl px-4 py-3 bg-gray-50">
+                <Lock size={14} className="text-gray-400 shrink-0" />
+                <span className="text-xs text-gray-500">
+                  <span className="font-bold text-gray-700">{formatShort(monthStart)} → {formatShort(herdado.fim)}</span> já está confirmado para <span className="font-bold text-[#B5071A]">{herdado.nomeColaborador}</span> (bloco do mês anterior).
+                </span>
+              </div>
+            )}
+
             {/* RESUMO DOS BLOCOS — clicável para selecionar */}
             <div className="mb-4 border border-gray-100 rounded-xl overflow-hidden shadow-sm bg-white">
               <div className="grid grid-cols-[auto_1fr_1fr_1fr] bg-gray-50 border-b border-gray-100 px-4 py-3 gap-3">
@@ -199,8 +257,8 @@ export function Suggestion() {
                     <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-[#B5071A] border-[#B5071A]' : 'border-gray-300'}`}>
                       {isSelected && <Check size={10} className="text-white" strokeWidth={3} />}
                     </div>
-                    <span className="text-xs font-bold text-gray-700">{pad(b.inicio)}/{pad(month + 1)} → {pad(b.fim)}/{pad(month + 1)}</span>
-                    <span className="text-xs text-gray-500">{b.fim - b.inicio + 1} dias</span>
+                    <span className="text-xs font-bold text-gray-700">{formatShort(b.inicio)} → {formatShort(b.fim)}</span>
+                    <span className="text-xs text-gray-500">{diffDays(b.inicio, b.fim)} dias</span>
                     <span className="text-xs font-bold text-[#B5071A]">{b.collaborator.nome}</span>
                   </div>
                 );
@@ -218,11 +276,17 @@ export function Suggestion() {
                 {Array.from({ length: firstDayIdx }).map((_, i) => (
                   <div key={`empty-${i}`} className="h-20 bg-white opacity-50" />
                 ))}
-                {suggestions.map(item => {
+                {herdadoDays.map(d => (
+                  <div key={`herdado-${d.getTime()}`} className="h-20 p-2 flex flex-col justify-between bg-gray-100">
+                    <span className="text-lg font-bold leading-none text-gray-300">{d.getDate()}</span>
+                    <span className="text-[9px] font-semibold truncate text-gray-400 flex items-center gap-1"><Lock size={9} /> {herdado?.nomeColaborador.split(' ')[0]}</span>
+                  </div>
+                ))}
+                {suggestions.filter(item => item.date <= monthEnd).map(item => {
                   const isSelected = selectedBlocos.has(item.blocoIdx);
                   return (
                     <div
-                      key={item.day}
+                      key={item.date.getTime()}
                       onClick={() => toggleBloco(item.blocoIdx)}
                       className={[
                         'h-20 p-2 flex flex-col justify-between transition-colors cursor-pointer',
@@ -230,7 +294,7 @@ export function Suggestion() {
                       ].join(' ')}
                     >
                       <div className="flex flex-col gap-0.5">
-                        <span className={`text-lg font-bold leading-none ${item.isHoliday ? 'text-[#B5071A]' : 'text-[#B8BEC7]'}`}>{item.day}</span>
+                        <span className={`text-lg font-bold leading-none ${item.isHoliday ? 'text-[#B5071A]' : 'text-[#B8BEC7]'}`}>{item.date.getDate()}</span>
                         {item.isHoliday && <span className="text-[8px] font-bold text-[#B5071A] uppercase leading-tight line-clamp-1">{item.holidayName}</span>}
                       </div>
                       <span className={`text-[9px] font-semibold truncate ${isSelected ? 'text-gray-500' : 'text-gray-300'}`}>{item.collaborator.nome.split(' ')[0]}</span>
@@ -259,8 +323,8 @@ export function Suggestion() {
                       </div>
                       <div>
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Bloco {i + 1}</p>
-                        <p className="text-xs font-bold text-gray-700">{pad(b.inicio)}/{pad(month + 1)} → {pad(b.fim)}/{pad(month + 1)}</p>
-                        <p className="text-[10px] text-gray-500">{b.fim - b.inicio + 1} dias</p>
+                        <p className="text-xs font-bold text-gray-700">{formatShort(b.inicio)} → {formatShort(b.fim)}</p>
+                        <p className="text-[10px] text-gray-500">{diffDays(b.inicio, b.fim)} dias</p>
                       </div>
                     </div>
                     <span className="text-xs font-bold text-[#B5071A] bg-red-50 px-3 py-1.5 rounded-lg">{b.collaborator.nome.split(' ')[0]}</span>

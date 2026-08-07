@@ -3,6 +3,7 @@ import { Activity, Loader2, UserPlus, ShieldCheck, Mail, Trash2 } from 'lucide-r
 import { Button } from '../../components/Button';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { SearchBar } from '../../components/SearchBar';
+import { DataTable } from '../../components/DataTable';
 import { collaboratorService, type Collaborator } from '../../services/collaboratorService';
 import { authService } from '../../services/authService';
 import { conviteService } from '../../services/conviteService';
@@ -140,82 +141,54 @@ export function All() {
           </div>
         ) : (
           <>
-            {/* TABELA DESKTOP */}
-            <div className="hidden md:block border border-gray-100 rounded-xl overflow-hidden shadow-sm bg-white mb-6">
-              <div className="grid grid-cols-[0.5fr_1fr_1fr_0.5fr_100px] bg-gray-50 border-b border-gray-100 px-6 py-4">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Código</span>
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Nome</span>
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Cargo</span>
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Setor</span>
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Status</span>
-              </div>
-
-              <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
-                {filtered.length === 0 ? (
-                  <p className="text-center text-gray-400 text-sm py-10">Nenhum colaborador encontrado.</p>
-                ) : filtered.map((c) => {
-                  const isSelected = selected?.id === c.id;
-                  return (
-                    <div
-                      key={c.id}
-                      onClick={() => handleRowClick(c)}
-                      onDoubleClick={() => navigate(`/users/details/${c.id}`)}
-                      className={[
-                        'grid grid-cols-[0.5fr_1fr_1fr_0.5fr_100px] px-6 py-4 border-b border-gray-50 items-center transition-colors cursor-pointer',
-                        isSelected ? 'bg-red-50 border-l-2 border-l-[#B5071A]' : 'hover:bg-gray-50',
-                      ].join(' ')}
-                    >
-                      <span className="text-sm font-bold text-gray-400">{c.id.split('-')[0].toUpperCase()}</span>
-                      <span className="text-xs font-bold text-gray-700 uppercase">{c.nome}</span>
-                      <span className="text-xs font-medium text-gray-600">{c.cargo}</span>
-                      <span className="text-xs font-medium text-gray-600">{c.setor}</span>
-                      <div className="flex justify-center">
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${c.status === 'ativo' ? 'text-green-600 bg-green-50' : 'text-gray-500 bg-gray-100'}`}>
-                          {c.status === 'ativo' ? 'Ativo' : 'Inativo'}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* MOBILE CARDS */}
-            <div className="md:hidden">
-              <div className="max-h-[360px] overflow-y-auto space-y-3 pb-4 pr-1 custom-scrollbar">
-                {filtered.length === 0 ? (
-                  <p className="text-center text-gray-400 text-sm py-10">Nenhum colaborador encontrado.</p>
-                ) : filtered.map((c) => {
-                  const isSelected = selected?.id === c.id;
-                  return (
-                    <div
-                      key={c.id}
-                      onClick={() => handleRowClick(c)}
-                      onDoubleClick={() => navigate(`/users/details/${c.id}`)}
-                      className={[
-                        'border rounded-xl p-4 shadow-sm cursor-pointer transition-all',
-                        isSelected ? 'bg-red-50 border-[#B5071A]' : 'bg-gray-50 border-gray-100',
-                      ].join(' ')}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="text-[10px] font-bold text-gray-400">CÓD: {c.id.split('-')[0].toUpperCase()}</span>
-                        <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${c.status === 'ativo' ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500'}`}>
-                          {c.status === 'ativo' ? 'Ativo' : 'Inativo'}
-                        </span>
-                      </div>
-                      <p className="text-sm font-bold text-gray-700 uppercase">{c.nome}</p>
-                      <p className="text-[11px] text-gray-500">{c.cargo} — {c.setor}</p>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {filtered.length > 2 && (
-                <div className="text-center py-2">
-                  <div className="w-8 h-1 bg-gray-200 rounded-full mx-auto animate-pulse"></div>
-                </div>
+            <DataTable<Collaborator>
+              columns={[
+                { header: 'Código' },
+                { header: 'Nome' },
+                { header: 'Cargo' },
+                { header: 'Setor' },
+                { header: 'Status', className: 'text-center' },
+              ]}
+              gridCols="grid-cols-[0.5fr_1fr_1fr_0.5fr_100px]"
+              items={filtered}
+              rowKey={c => c.id}
+              emptyMessage="Nenhum colaborador encontrado."
+              maxHeight="400px"
+              containerClassName="mb-6"
+              onRowClick={handleRowClick}
+              onRowDoubleClick={c => navigate(`/users/details/${c.id}`)}
+              isRowSelected={c => selected?.id === c.id}
+              renderRow={c => (
+                <>
+                  <span className="text-sm font-bold text-gray-400">{c.id.split('-')[0].toUpperCase()}</span>
+                  <span className="text-xs font-bold text-gray-700 uppercase">{c.nome}</span>
+                  <span className="text-xs font-medium text-gray-600">{c.cargo}</span>
+                  <span className="text-xs font-medium text-gray-600">{c.setor}</span>
+                  <div className="flex justify-center">
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${c.status === 'ativo' ? 'text-green-600 bg-green-50' : 'text-gray-500 bg-gray-100'}`}>
+                      {c.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </div>
+                </>
               )}
-            </div>
+              renderMobileCard={c => (
+                <>
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="text-[10px] font-bold text-gray-400">CÓD: {c.id.split('-')[0].toUpperCase()}</span>
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${c.status === 'ativo' ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500'}`}>
+                      {c.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </div>
+                  <p className="text-sm font-bold text-gray-700 uppercase">{c.nome}</p>
+                  <p className="text-[11px] text-gray-500">{c.cargo} — {c.setor}</p>
+                </>
+              )}
+            />
+            {filtered.length > 2 && (
+              <div className="md:hidden text-center py-2">
+                <div className="w-8 h-1 bg-gray-200 rounded-full mx-auto animate-pulse"></div>
+              </div>
+            )}
           </>
         )}
 
@@ -258,11 +231,6 @@ export function All() {
           </div>
         </div>
       </div>
-
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d9d9d9; border-radius: 10px; }
-      `}</style>
     </div>
   );
 }
