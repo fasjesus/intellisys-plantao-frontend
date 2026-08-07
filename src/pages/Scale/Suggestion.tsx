@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Check, RefreshCw, ChevronLeft, ChevronRight, Loader2, Lock } from 'lucide-react';
 import { collaboratorService, type Collaborator } from '../../services/collaboratorService';
 import { scaleService } from '../../services/scaleService';
@@ -29,9 +29,35 @@ const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), 
 const diffDays = (a: Date, b: Date) => Math.round((b.getTime() - a.getTime()) / 86400000) + 1;
 const formatShort = (d: Date) => `${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
 
+const safeDate = (iso: string) => {
+  if (!iso) return new Date();
+  return new Date(iso.includes('T') ? iso : `${iso}T12:00:00Z`);
+};
+
 export function Suggestion() {
   const navigate = useNavigate();
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+
+  // INICIALIZAÇÃO INTELIGENTE DA DATA
+  const [currentDate, setCurrentDate] = useState(() => {
+    // 1. Tenta ler via Query Params (ex: /sugestao?year=2026&month=10)
+    const yearParam = searchParams.get('year');
+    const monthParam = searchParams.get('month'); // Assumindo base 1-12 na URL
+    if (yearParam && monthParam) {
+      return new Date(parseInt(yearParam, 10), parseInt(monthParam, 10) - 1, 1);
+    }
+
+    // 2. Tenta ler via React Router State (ex: navigate('/sugestao', { state: { date: '2026-10-01' } }))
+    if (location.state?.date) {
+      const stateDate = new Date(location.state.date);
+      if (!isNaN(stateDate.getTime())) return stateDate;
+    }
+
+    // 3. Fallback seguro: Mês atual do mundo real
+    return new Date();
+  });
+
   const [staff, setStaff] = useState<Collaborator[]>([]);
   const [holidays, setHolidays] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -51,6 +77,7 @@ export function Suggestion() {
   useEffect(() => {
     setStaffOffset(0);
     setSelectedBlocos(new Set());
+    
     async function load() {
       setLoading(true);
       try {
@@ -63,6 +90,7 @@ export function Suggestion() {
             `${year}-${pad(month + 1)}-${pad(monthEnd.getDate())}`,
           ),
         ]);
+        
         setStaff(colaboradores.filter(c => c.ativo_plantao === 'ativo' && c.status === 'ativo'));
 
         const map: Record<string, string> = {};
@@ -71,14 +99,15 @@ export function Suggestion() {
         }
         setHolidays(map);
 
-        // Detecta plantão já confirmado que começou antes deste mês e invade seus primeiros dias.
         const colabMap: Record<string, string> = {};
         colaboradores.forEach(c => { colabMap[c.id] = c.nome; });
+        
         let carriedOver: { fim: Date; nomeColaborador: string } | null = null;
         if (Array.isArray(plantoesOverlap)) {
           for (const p of plantoesOverlap) {
-            const inicio = new Date(p.periodo.Inicio);
-            const fim = new Date(p.periodo.Fim);
+            const inicio = safeDate(p.periodo?.Inicio || (p as any).data_inicio);
+            const fim = safeDate(p.periodo?.Fim || (p as any).data_fim);
+            
             if (inicio < monthStart && fim >= monthStart) {
               if (!carriedOver || fim > carriedOver.fim) {
                 carriedOver = { fim, nomeColaborador: colabMap[p.colaborador_id] ?? '—' };
@@ -101,10 +130,10 @@ export function Suggestion() {
     const result: Bloco[] = [];
     let inicio = herdado ? addDays(herdado.fim, 1) : new Date(monthStart);
     if (inicio > monthEnd) return result;
+    
     let idx = 0;
     while (inicio <= monthEnd) {
       let fim = addDays(inicio, MIN_BLOCO_DIAS - 1);
-      // Garante no mínimo 7 dias mesmo que ultrapasse o fim do mês exibido.
       if (fim < monthEnd && diffDays(inicio, monthEnd) < MIN_BLOCO_DIAS) {
         fim = addDays(inicio, MIN_BLOCO_DIAS - 1);
       }
@@ -178,20 +207,22 @@ export function Suggestion() {
       return;
     }
     setConfirming(true);
+    
     try {
-      await Promise.all(
-        toCreate.map(b => dutyService.create({
+      for (const b of toCreate) {
+        await dutyService.create({
           colaborador_id: b.collaborator.id,
           periodo: {
             inicio: `${b.inicio.getFullYear()}-${pad(b.inicio.getMonth() + 1)}-${pad(b.inicio.getDate())}T12:00:00Z`,
             fim: `${b.fim.getFullYear()}-${pad(b.fim.getMonth() + 1)}-${pad(b.fim.getDate())}T12:00:00Z`,
           },
-        }))
-      );
+        });
+      }
+      
       alert('Escala confirmada com sucesso!');
       navigate('/scale/month');
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Erro ao confirmar escala.');
+      alert(err?.response?.data?.message || 'Erro ao confirmar escala. Alguns plantões podem não ter sido salvos.');
     } finally {
       setConfirming(false);
     }
@@ -235,7 +266,7 @@ export function Suggestion() {
               </div>
             )}
 
-            {/* RESUMO DOS BLOCOS — clicável para selecionar */}
+            {/* RESUMO DOS BLOCOS */}
             <div className="mb-4 border border-gray-100 rounded-xl overflow-hidden shadow-sm bg-white">
               <div className="grid grid-cols-[auto_1fr_1fr_1fr] bg-gray-50 border-b border-gray-100 px-4 py-3 gap-3">
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-5"></span>
