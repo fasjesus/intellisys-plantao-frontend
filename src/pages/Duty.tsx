@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, useOutletContext } from 'react-router-dom';
-import { AlertCircle, Info, Plus, Loader2, X, Trash2, CircleDollarSign, CheckCircle, FileSignature } from 'lucide-react';
+import { AlertCircle, Info, Plus, Loader2, X, Trash2, CircleDollarSign, CheckCircle, FileSignature, Edit2 } from 'lucide-react';
 import { SearchBar } from '../components/SearchBar';
 import { Button } from '../components/Button';
 import { DataTable } from '../components/DataTable';
@@ -52,11 +52,13 @@ export function Duty() {
   
   // MODAIS
   const [showModal, setShowModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false); // NOVO MODAL
   const [showDetalhes, setShowDetalhes] = useState(false);
   const [showFinishModal, setShowFinishModal] = useState(false);
   
   // ESTADOS DE AÇÃO
   const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState(false); // NOVO ESTADO
   const [deleting, setDeleting] = useState(false);
   const [paying, setPaying] = useState(false);
   const [finishing, setFinishing] = useState(false);
@@ -65,6 +67,12 @@ export function Duty() {
   const [finishObservation, setFinishObservation] = useState('');
 
   const [form, setForm] = useState<CreateForm>({
+    colaborador_id: '',
+    inicio: '',
+    fim: '',
+  });
+
+  const [editForm, setEditForm] = useState<CreateForm>({
     colaborador_id: '',
     inicio: '',
     fim: '',
@@ -159,6 +167,65 @@ export function Duty() {
     }
   };
 
+  // --- NOVA LÓGICA DE EDIÇÃO ---
+  const handleOpenEditModal = () => {
+    if (!selected) return;
+    
+    // Extrai apenas o YYYY-MM-DD da string ISO para popular o input type="date"
+    const extratDate = (iso: string) => iso ? iso.split('T')[0] : '';
+    
+    setEditForm({
+      colaborador_id: selected.colaborador_id,
+      inicio: extratDate(selected.periodo.Inicio),
+      fim: extratDate(selected.periodo.Fim)
+    });
+    setShowEditModal(true);
+  };
+
+  const submitEdit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!selected) return;
+    if (!editForm.colaborador_id || !editForm.inicio || !editForm.fim) {
+      alert('Preencha todos os campos.');
+      return;
+    }
+    if (new Date(editForm.fim) <= new Date(editForm.inicio)) {
+      alert('A data de fim deve ser posterior ao início.');
+      return;
+    }
+    
+    setEditing(true);
+    try {
+      await dutyService.update(selected.id, {
+        colaborador_id: editForm.colaborador_id,
+        data_inicio: editForm.inicio,
+        data_fim: editForm.fim
+      });
+      
+      // Recarrega os dados para refletir as alterações
+      const data = await dutyService.getAll();
+      if (Array.isArray(data)) {
+        const colaboradoresCache: Record<string, string> = {};
+        colaboradores.forEach(c => colaboradoresCache[c.id] = c.nome);
+        
+        const withNomes = data.map(p => ({
+          ...p,
+          funcionario: colaboradoresCache[p.colaborador_id] || p.colaborador_id
+        }));
+        setPlantoes(withNomes);
+        
+        const updatedSelected = withNomes.find(p => p.id === selected.id);
+        if (updatedSelected) setSelected(updatedSelected);
+      }
+      
+      setShowEditModal(false);
+    } catch (err: unknown) {
+      alert(getApiErrorMessage(err, 'Erro ao editar plantão.'));
+    } finally {
+      setEditing(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!selected) return;
     if (!confirm(`Deletar plantão de ${selected.funcionario}?`)) return;
@@ -237,23 +304,23 @@ export function Duty() {
     }
   };
 
+  // --- CORREÇÃO DO FUSO HORÁRIO AQUI ---
   const formatDate = (iso: string) => {
     if (!iso) return '—';
     const date = new Date(iso);
-    return isNaN(date.getTime()) ? '—' : date.toLocaleDateString('pt-BR');
+    // Adicionamos { timeZone: 'UTC' } para garantir que a meia-noite UTC seja exibida como o próprio dia, ignorando o fuso local.
+    return isNaN(date.getTime()) ? '—' : date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
   };
 
-  // --- ORDENAÇÃO APLICADA AQUI ---
   const filtered = plantoes
     .filter(p =>
       p.funcionario.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.id.includes(searchTerm)
     )
     .sort((a, b) => {
-      // Usamos a data de início para definir qual é o mais recente
       const dateA = new Date(a.periodo?.Inicio || 0).getTime();
       const dateB = new Date(b.periodo?.Inicio || 0).getTime();
-      return dateB - dateA; // Decrescente: o maior valor (mais recente) vem primeiro
+      return dateB - dateA;
     });
   
   const colaboradoresDisponiveis = colaboradores.filter(c => c.ativo_plantao === 'ativo');
@@ -336,11 +403,6 @@ export function Duty() {
             </>
           )}
         />
-        {filtered.length > 2 && (
-          <div className="md:hidden text-center py-2">
-            <div className="w-8 h-1 bg-gray-200 rounded-full mx-auto animate-pulse"></div>
-          </div>
-        )}
 
         {/* TOOLBAR */}
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 md:relative md:border-none md:p-0 md:mt-6 md:flex md:justify-end md:gap-3">
@@ -352,6 +414,16 @@ export function Duty() {
               disabled={!selected}
               className={!selected ? 'opacity-30 cursor-not-allowed' : ''}
               onClick={() => selected && setShowDetalhes(true)}
+            />
+            
+            {/* BOTÃO EDITAR */}
+            <Button
+              label="Editar"
+              icon={<Edit2 size={14} />}
+              variant="secondary"
+              disabled={!selected || normalizeStatus(selected?.status ?? '') !== 'AGENDADO'}
+              className={(!selected || normalizeStatus(selected?.status ?? '') !== 'AGENDADO') ? 'opacity-30 cursor-not-allowed' : ''}
+              onClick={handleOpenEditModal}
             />
             
             <Button
@@ -384,16 +456,86 @@ export function Duty() {
               variant="secondary"
               onClick={() => setShowModal(true)}
             />
-            
-            <Button
-              label="Voltar"
-              variant="secondary"
-              onClick={() => navigate('/home')}
-            />
           </div>
         </div>
       </div>
 
+      {/* MODAL EDITAR PLANTÃO */}
+      {showEditModal && selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 flex flex-col gap-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-[#B5071A]">Editar Plantão</h3>
+                <p className="text-[10px] text-gray-400 font-medium">Altere os dados do plantão agendado.</p>
+              </div>
+              <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={submitEdit} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Funcionário</label>
+                <select
+                  required
+                  value={editForm.colaborador_id}
+                  onChange={e => setEditForm(f => ({ ...f, colaborador_id: e.target.value }))}
+                  className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-[#B5071A] transition-colors bg-white"
+                >
+                  {colaboradoresDisponiveis.map(c => (
+                    <option key={c.id} value={c.id}>{c.nome}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Início</label>
+                  <input
+                    type="date"
+                    required
+                    value={editForm.inicio}
+                    onChange={e => setEditForm(f => ({ ...f, inicio: e.target.value }))}
+                    className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-[#B5071A] transition-colors"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Fim</label>
+                  <input
+                    type="date"
+                    required
+                    value={editForm.fim}
+                    onChange={e => setEditForm(f => ({ ...f, fim: e.target.value }))}
+                    className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-[#B5071A] transition-colors"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1 py-2.5 rounded-lg border border-gray-200 text-[10px] font-bold uppercase text-gray-500 hover:bg-gray-50 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={editing}
+                  className="flex-1 py-2.5 rounded-lg bg-[#B5071A] text-white text-[10px] font-bold uppercase shadow-sm active:scale-95 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {editing ? <Loader2 size={14} className="animate-spin" /> : <Edit2 size={14} />}
+                  {editing ? 'Salvando...' : 'Salvar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* OUTROS MODAIS (CRIAR, DETALHES E FINALIZAR) MANTIDOS ABAIXO... */}
+      
       {/* MODAL DETALHES */}
       {showDetalhes && selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">

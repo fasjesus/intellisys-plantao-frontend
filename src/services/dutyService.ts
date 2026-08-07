@@ -85,5 +85,10 @@ export const dutyService = {
   pagar: async (id: string, observacoes?: string) => {
     const response = await api.post(`/plantoes/${id}/pagamento`, { observacoes });
     return response.data;
-  }
+  },
+  // atualiza o plantão com os dados fornecidos (colaborador_id, data_inicio, data_fim)
+  update: async (id: string, payload: { colaborador_id: string; data_inicio: string; data_fim: string }): Promise<Duty> => {
+    const response = await api.patch(`/plantoes/${id}`, payload);
+    return response.data;
+  },
 };
