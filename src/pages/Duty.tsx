@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, useOutletContext } from 'react-router-dom';
-import { AlertCircle, Info, Plus, Loader2, X, Trash2, CircleDollarSign, CheckCircle } from 'lucide-react';
+import { AlertCircle, Info, Plus, Loader2, X, Trash2, CircleDollarSign, CheckCircle, FileSignature } from 'lucide-react';
 import { SearchBar } from '../components/SearchBar';
 import { Button } from '../components/Button';
 import { DataTable } from '../components/DataTable';
@@ -49,13 +49,21 @@ export function Duty() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [colaboradores, setColaboradores] = useState<Collaborator[]>([]);
+  
+  // MODAIS
   const [showModal, setShowModal] = useState(false);
+  const [showDetalhes, setShowDetalhes] = useState(false);
+  const [showFinishModal, setShowFinishModal] = useState(false); // NOVO MODAL
+  
+  // ESTADOS DE AÇÃO
   const [saving, setSaving] = useState(false);
-  const [selected, setSelected] = useState<DutyWithNome | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [paying, setPaying] = useState(false);
-  const [finishing, setFinishing] = useState(false); // NOVO ESTADO
-  const [showDetalhes, setShowDetalhes] = useState(false);
+  const [finishing, setFinishing] = useState(false);
+  
+  const [selected, setSelected] = useState<DutyWithNome | null>(null);
+  const [finishObservation, setFinishObservation] = useState(''); // ESTADO DA OBSERVAÇÃO
+
   const [form, setForm] = useState<CreateForm>({
     colaborador_id: '',
     inicio: '',
@@ -126,6 +134,8 @@ export function Duty() {
       });
       setShowModal(false);
       setForm({ colaborador_id: '', inicio: '', fim: '' });
+      
+      // Recarregar dados
       const data = await dutyService.getAll();
       if (!Array.isArray(data)) return;
       const colaboradoresCache: Record<string, string> = {};
@@ -165,15 +175,28 @@ export function Duty() {
     }
   };
 
-  // --- NOVA FUNÇÃO DE FINALIZAR ---
-  const handleFinalizar = async () => {
+  // --- NOVA LÓGICA DE FINALIZAR ---
+  const handleOpenFinishModal = () => {
     if (!selected) return;
-    if (!confirm(`Marcar plantão de ${selected.funcionario} como concluído? O valor será gerado.`)) return;
+    setFinishObservation(''); // Limpa a observação sempre que abrir
+    setShowFinishModal(true);
+  };
+
+  const submitFinalizar = async (e: React.SyntheticEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!selected) return;
+    
+    if (!finishObservation.trim()) {
+      alert('A observação é obrigatória para finalizar o plantão.');
+      return;
+    }
+
     setFinishing(true);
     try {
-      await dutyService.updateStatus(selected.id, statusToApiValue('CONCLUIDO'));
+      // Passa a observação como terceiro parâmetro
+      await dutyService.updateStatus(selected.id, statusToApiValue('CONCLUIDO'), finishObservation);
       
-      // Recarrega todos os plantões para obter o valor_total atualizado do backend
+      // Recarrega todos os plantões para obter o valor_total e observações atualizados do backend
       const data = await dutyService.getAll();
       if (Array.isArray(data)) {
         const colaboradoresCache: Record<string, string> = {};
@@ -186,10 +209,12 @@ export function Duty() {
         
         setPlantoes(withNomes);
         
-        // Atualiza o selecionado
+        // Atualiza o selecionado em tela
         const updatedSelected = withNomes.find(p => p.id === selected.id);
         if (updatedSelected) setSelected(updatedSelected);
       }
+      
+      setShowFinishModal(false);
     } catch (err: unknown) {
       alert(getApiErrorMessage(err, 'Erro ao finalizar plantão.'));
     } finally {
@@ -203,11 +228,9 @@ export function Duty() {
     
     setPaying(true);
     try {
-      // Usa a rota ESPECÍFICA de pagamento do backend
       await dutyService.pagar(selected.id);
       
-      // O backend deve ter alterado para "4" internamente. Vamos refletir isso na tela:
-      const novoStatus = statusToApiValue('PAGO'); // '4'
+      const novoStatus = statusToApiValue('PAGO');
       setPlantoes(prev => prev.map(p => p.id === selected.id ? { ...p, status: novoStatus } : p));
       setSelected(prev => prev ? { ...prev, status: novoStatus } : null);
       
@@ -229,6 +252,7 @@ export function Duty() {
     p.funcionario.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.id.includes(searchTerm)
   );
+  
   const colaboradoresDisponiveis = colaboradores.filter(c => c.ativo_plantao === 'ativo');
 
   if (loading) {
@@ -327,16 +351,15 @@ export function Duty() {
               onClick={() => selected && setShowDetalhes(true)}
             />
             
-            {/* BOTÃO FINALIZAR */}
+            {/* BOTÃO ABRIR MODAL DE FINALIZAR */}
             <Button
-              label={finishing ? 'Finalizando...' : 'Finalizar'}
-              icon={finishing ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
+              label="Finalizar"
+              icon={<CheckCircle size={14} />}
               disabled={!selected || finishing || ['CONCLUIDO', 'PAGO', 'CANCELADO'].includes(normalizeStatus(selected?.status ?? ''))}
               className={(!selected || ['CONCLUIDO', 'PAGO', 'CANCELADO'].includes(normalizeStatus(selected?.status ?? ''))) ? 'opacity-30 cursor-not-allowed' : ''}
-              onClick={handleFinalizar}
+              onClick={handleOpenFinishModal}
             />
 
-            {/* BOTÃO PAGAR */}
             <Button
               label={paying ? 'Pagando...' : 'Pagar'}
               icon={paying ? <Loader2 size={14} className="animate-spin" /> : <CircleDollarSign size={14} />}
@@ -394,7 +417,7 @@ export function Duty() {
               ].map(({ label, value }, i) => (
                 <div key={label} className={`flex justify-between px-4 py-3 ${i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</span>
-                  <span className="text-xs font-bold text-gray-700 text-right max-w-[60%] truncate">{value}</span>
+                  <span className="text-xs font-bold text-gray-700 text-right max-w-[60%] truncate" title={value}>{value}</span>
                 </div>
               ))}
             </div>
@@ -475,6 +498,62 @@ export function Duty() {
                 >
                   {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
                   {saving ? 'Salvando...' : 'Criar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* NOVO MODAL: FINALIZAR PLANTÃO */}
+      {showFinishModal && selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 flex flex-col gap-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-[#B5071A]">Finalizar Plantão</h3>
+                <p className="text-[10px] text-gray-400 font-medium">Adicione uma observação para concluir.</p>
+              </div>
+              <button onClick={() => setShowFinishModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={submitFinalizar} className="flex flex-col gap-4">
+              <div className="p-3 bg-gray-50 rounded-lg border border-gray-100 flex flex-col gap-1">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Colaborador</span>
+                <span className="text-sm font-bold text-gray-700">{selected.funcionario}</span>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                  Observações (Obrigatório)
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  placeholder="Ex: Plantão validado pelo gestor..."
+                  value={finishObservation}
+                  onChange={e => setFinishObservation(e.target.value)}
+                  className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-[#B5071A] transition-colors resize-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowFinishModal(false)}
+                  className="flex-1 py-2.5 rounded-lg border border-gray-200 text-[10px] font-bold uppercase text-gray-500 hover:bg-gray-50 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={finishing || !finishObservation.trim()}
+                  className="flex-1 py-2.5 rounded-lg bg-[#B5071A] text-white text-[10px] font-bold uppercase shadow-sm active:scale-95 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {finishing ? <Loader2 size={14} className="animate-spin" /> : <FileSignature size={14} />}
+                  {finishing ? 'Salvando...' : 'Concluir'}
                 </button>
               </div>
             </form>
