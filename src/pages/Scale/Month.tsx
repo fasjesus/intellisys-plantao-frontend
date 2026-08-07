@@ -233,7 +233,7 @@ for (const p of (Array.isArray(plantoes) ? plantoes : [])) {
               Relatório
             </button>
             <button 
-              onClick={() => navigate('/scale/suggestion')} 
+              onClick={() => navigate(`/scale/suggestion?year=${year}&month=${month + 1}`)} 
               className="bg-[#B5071A] text-white py-3 md:px-8 md:py-2.5 rounded-xl font-bold text-[10px] md:text-xs shadow-md active:scale-95 transition-all"
             >
               Sugestão
