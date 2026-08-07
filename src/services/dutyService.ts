@@ -13,6 +13,14 @@ export interface Duty {
   observacoes: string | null;
 }
 
+// 1. Nova interface para os filtros do relatório
+export interface RelatorioFiltros {
+  data_inicio: string;
+  data_fim: string;
+  colaborador_id?: string;
+  status?: string | number;
+}
+
 export const dutyService = {
   getAll: async (): Promise<Duty[]> => {
     const response = await api.get('/plantoes');
@@ -43,6 +51,18 @@ export const dutyService = {
 
   getByPeriod: async (startDate: string, endDate: string): Promise<Duty[]> => {
     const response = await api.get(`/plantoes/periodo/${startDate}/${endDate}`);
+    return response.data;
+  },
+
+  // 2. NOVO MÉTODO EXCLUSIVO PARA O RELATÓRIO
+  getRelatorio: async (filtros: RelatorioFiltros): Promise<any[]> => {
+    // Limpa os filtros vazios para não enviar "colaborador_id=" na URL
+    const paramsLimpos = Object.fromEntries(
+      Object.entries(filtros).filter(([_, v]) => v != null && v !== '')
+    );
+
+    // O Axios automaticamente converte o objeto paramsLimpos para ?data_inicio=X&data_fim=Y...
+    const response = await api.get('/plantoes/relatorio', { params: paramsLimpos });
     return response.data;
   },
 
