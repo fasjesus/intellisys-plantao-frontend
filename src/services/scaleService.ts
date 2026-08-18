@@ -8,11 +8,9 @@ export interface Feriado {
 }
 
 export interface ConfigValor {
-  id: string;
   tipo_dia: 'UTIL' | 'SABADO' | 'DOMINGO' | 'FERIADO';
   valor: number;
-  vigencia_inicio: string;
-  vigencia_fim: string | null;
+  descricao?: string;
 }
 
 export interface Cargo {
@@ -44,7 +42,7 @@ export const scaleService = {
   createConfigValor: async (payload: {
     tipo_dia: ConfigValor['tipo_dia'];
     valor: number;
-    vigencia_inicio: string;
+    descricao?: string;
   }): Promise<ConfigValor> => {
     const response = await api.post('/admin/config-valores', payload);
     return response.data;
@@ -79,10 +77,9 @@ export const scaleService = {
   },
 
   updateConfigValor: async (
-    tipo_dia: string, 
-    data: { valor?: number; vigencia_inicio?: string}
+    tipo_dia: ConfigValor['tipo_dia'],
+    data: { valor: number; descricao?: string }
   ) => {
-    // Chama a rota PATCH passando o tipo_dia na URL (ex: /admin/config-valores/UTIL)
     const response = await api.patch(`/admin/config-valores/${tipo_dia}`, data);
     return response.data;
   }
