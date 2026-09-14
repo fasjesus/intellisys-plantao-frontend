@@ -21,6 +21,7 @@ import { Convites } from './pages/Convites';
 import { Financeiro } from './pages/Financeiro';
 import { Perfil } from './pages/Perfil';
 import { CargosSetores } from './pages/CargosSetores';
+import { ConfigEmail } from './pages/ConfigEmail';
 
 export function App() {
   const location = useLocation();
@@ -51,6 +52,7 @@ export function App() {
         <Route path="/modelo-comunicacao" element={<AdminRoute><ModeloComunicacao /></AdminRoute>} />
         <Route path="/reports" element={<AdminRoute><Reports /></AdminRoute>} />
         <Route path="/duty" element={<AdminRoute><Duty /></AdminRoute>} />
+        <Route path="/config/email" element={<ConfigEmail />} />
       </Route>
 
       {/* Rota de erro 404 */}
