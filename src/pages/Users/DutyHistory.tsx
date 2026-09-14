@@ -6,7 +6,7 @@ import { dutyService, type Duty } from '../../services/dutyService';
 import { Button } from '../../components/Button';
 import { DataTable } from '../../components/DataTable';
 import { pdf } from '@react-pdf/renderer';
-import { ReportTemplate, registerFonts } from '../../components/ReportTemplate';
+import { ReportTemplate, registerFonts, type PlantaoGroup } from '../../components/ReportTemplate';
 import { statusLabel, statusClass as statusStyle } from '../../utils/dutyStatus';
 
 
@@ -79,26 +79,26 @@ export function DutyHistory() {
         });
       } catch { /* sem logo */ }
 
-      const rows = duties.map(d => {
+      const plantoes: PlantaoGroup[] = duties.map(d => {
         return {
+          id: String(d.id || '—').split('-')[0].toUpperCase(),
           colaborador: colaborador.nome,
-          inicio: getPeriodStart(d.periodo),
-          fim: getPeriodEnd(d.periodo),
-          status: String(d.status),
-          valor: d.valor_total,
+          periodoInicio: formatDate(getPeriodStart(d.periodo)),
+          periodoFim: formatDate(getPeriodEnd(d.periodo)),
+          status: statusLabel(d.status),
+          valorTotal: Number(d.valor_total || 0),
+          dias: [],
         };
       });
 
       const emitidoEm = `${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+      const filtrosText = `Funcionário --> ${colaborador.nome}`;
 
       registerFonts();
       const element = ReportTemplate({
-        rows,
-        periodoInicio: rows.length ? formatDate(rows[rows.length - 1].inicio) : '—',
-        periodoFim: rows.length ? formatDate(rows[0].inicio) : '—',
-        funcionarioNome: colaborador.nome,
+        plantoes,
+        filtrosText,
         emitidoEm,
-        totalValor,
         logoBase64,
       });
       const blob = await pdf(element).toBlob();

@@ -36,12 +36,12 @@ function AbaValores() {
   const [form, setForm] = useState({
     tipo_dia: 'UTIL' as ConfigValor['tipo_dia'],
     valor: '',
-    vigencia_inicio: '',
+    descricao: '',
   });
 
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingTipoDia, setEditingTipoDia] = useState<ConfigValor['tipo_dia'] | null>(null);
   const [editValor, setEditValor] = useState('');
-  const [editVigencia, setEditVigencia] = useState('');
+  const [editDescricao, setEditDescricao] = useState('');
   const [updating, setUpdating] = useState(false);
 
   async function load() {
@@ -62,13 +62,14 @@ function AbaValores() {
     e.preventDefault();
     setCreating(true);
     try {
+      const descricao = form.descricao.trim();
       await scaleService.createConfigValor({
         tipo_dia: form.tipo_dia,
         valor: parseFloat(form.valor),
-        vigencia_inicio: form.vigencia_inicio, // Envia exatamente YYYY-MM-DD
+        ...(descricao ? { descricao } : {}),
       });
       setShowForm(false);
-      setForm({ tipo_dia: 'UTIL', valor: '', vigencia_inicio: '' });
+      setForm({ tipo_dia: 'UTIL', valor: '', descricao: '' });
       await load();
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
@@ -83,21 +84,22 @@ function AbaValores() {
   };
 
   const handleUpdate = async (v: ConfigValor) => {
-    if (!editValor || !editVigencia) {
-      alert("Por favor, preencha o valor e a data de vigência corretamente.");
+    if (!editValor) {
+      alert('Por favor, preencha o valor corretamente.');
       return;
     }
 
     setUpdating(true);
     try {
+      const descricao = editDescricao.trim();
       const payload = {
         valor: parseFloat(editValor),
-        vigencia_inicio: editVigencia, // Envia exatamente YYYY-MM-DD
+        ...(descricao ? { descricao } : {}),
       };
 
       await scaleService.updateConfigValor(v.tipo_dia, payload);
       
-      setEditingId(null);
+      setEditingTipoDia(null);
       await load();
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
@@ -110,8 +112,6 @@ function AbaValores() {
       setUpdating(false);
     }
   };
-
-  const vigente = (v: ConfigValor) => !v.vigencia_fim || new Date(v.vigencia_fim) >= new Date();
 
   if (loading) {
     return (
@@ -158,12 +158,12 @@ function AbaValores() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] text-gray-400 font-bold uppercase ml-1">Vigência a partir de</label>
+            <label className="text-[10px] text-gray-400 font-bold uppercase ml-1">Descrição (opcional)</label>
             <input
-              type="date"
-              required
-              value={form.vigencia_inicio}
-              onChange={e => setForm(f => ({ ...f, vigencia_inicio: e.target.value }))}
+              type="text"
+              value={form.descricao}
+              onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))}
+              placeholder="Ex: Valor global para feriados"
               className="w-full h-11 px-4 rounded-xl border border-gray-200 text-sm font-bold text-gray-700 focus:border-[#B5071A] outline-none transition-all"
             />
           </div>
@@ -188,19 +188,18 @@ function AbaValores() {
         columns={[
           { header: 'Tipo de Dia' },
           { header: 'Valor' },
-          { header: 'Vigência Início' },
-          { header: 'Status' },
+          { header: 'Descrição' },
           { header: 'Ações' },
         ]}
-        gridCols="grid-cols-[1fr_1fr_1.2fr_1fr_100px]"
+        gridCols="grid-cols-[1fr_1fr_1.5fr_100px]"
         items={valores}
-        rowKey={v => v.id}
+        rowKey={v => v.tipo_dia}
         emptyMessage="Nenhum valor cadastrado."
         renderRow={v => (
           <>
             <span className="text-xs font-bold text-gray-700">{TIPO_DIA_LABEL[v.tipo_dia]}</span>
 
-            {editingId === v.id ? (
+            {editingTipoDia === v.tipo_dia ? (
               <input
                 type="number"
                 step="0.01"
@@ -213,24 +212,21 @@ function AbaValores() {
               <span className="text-xs font-bold text-[#B5071A]">{formatCurrency(v.valor)}</span>
             )}
 
-            {editingId === v.id ? (
+            {editingTipoDia === v.tipo_dia ? (
               <input
-                type="date"
-                value={editVigencia}
-                onChange={e => setEditVigencia(e.target.value)}
+                type="text"
+                value={editDescricao}
+                onChange={e => setEditDescricao(e.target.value)}
                 onClick={e => e.stopPropagation()}
-                className="h-8 w-32 px-2 rounded-lg border border-[#B5071A] text-xs text-gray-700 outline-none"
+                placeholder="Descrição (opcional)"
+                className="h-8 w-full px-2 rounded-lg border border-[#B5071A] text-xs text-gray-700 outline-none"
               />
             ) : (
-              <span className="text-xs text-gray-500">{formatDate(v.vigencia_inicio)}</span>
+              <span className="text-xs text-gray-500">{v.descricao || '—'}</span>
             )}
 
-            <span className={`text-[10px] font-bold px-2 py-1 rounded-full w-fit ${vigente(v) ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
-              {vigente(v) ? 'Vigente' : 'Encerrado'}
-            </span>
-
             <div className="flex gap-2">
-              {editingId === v.id ? (
+              {editingTipoDia === v.tipo_dia ? (
                 <>
                   <button
                     onClick={e => { e.stopPropagation(); handleUpdate(v); }}
@@ -241,7 +237,7 @@ function AbaValores() {
                     Salvar
                   </button>
                   <button
-                    onClick={e => { e.stopPropagation(); setEditingId(null); }}
+                    onClick={e => { e.stopPropagation(); setEditingTipoDia(null); }}
                     className="text-[10px] font-bold text-gray-400 hover:text-gray-600 flex items-center gap-1 transition-colors"
                   >
                     <X size={12} />
@@ -251,9 +247,9 @@ function AbaValores() {
                 <button
                   onClick={e => {
                     e.stopPropagation();
-                    setEditingId(v.id);
+                    setEditingTipoDia(v.tipo_dia);
                     setEditValor(String(v.valor));
-                    setEditVigencia(v.vigencia_inicio?.split('T')[0] ?? '');
+                    setEditDescricao(v.descricao ?? '');
                   }}
                   className="text-[10px] font-bold text-gray-400 hover:text-[#B5071A] flex items-center gap-1 transition-colors"
                 >
@@ -267,13 +263,13 @@ function AbaValores() {
           <>
             <div className="flex justify-between items-start mb-2">
               <span className="text-sm font-bold text-gray-700">{TIPO_DIA_LABEL[v.tipo_dia]}</span>
-              {editingId !== v.id && (
+              {editingTipoDia !== v.tipo_dia && (
                 <button
                   onClick={e => {
                     e.stopPropagation();
-                    setEditingId(v.id);
+                    setEditingTipoDia(v.tipo_dia);
                     setEditValor(String(v.valor));
-                    setEditVigencia(v.vigencia_inicio?.split('T')[0] ?? '');
+                    setEditDescricao(v.descricao ?? '');
                   }}
                   className="text-gray-400 hover:text-[#B5071A] transition-colors"
                 >
@@ -282,7 +278,7 @@ function AbaValores() {
               )}
             </div>
 
-            {editingId === v.id ? (
+            {editingTipoDia === v.tipo_dia ? (
               <div className="flex flex-col gap-2 mt-2">
                 <input
                   type="number"
@@ -294,17 +290,18 @@ function AbaValores() {
                   placeholder="Novo Valor"
                 />
                 <input
-                  type="date"
-                  value={editVigencia}
-                  onChange={e => setEditVigencia(e.target.value)}
+                  type="text"
+                  value={editDescricao}
+                  onChange={e => setEditDescricao(e.target.value)}
                   onClick={e => e.stopPropagation()}
                   className="h-9 px-3 rounded-lg border border-[#B5071A] text-sm text-gray-700 outline-none"
+                  placeholder="Descrição (opcional)"
                 />
                 <div className="flex gap-3 mt-2">
                   <button onClick={e => { e.stopPropagation(); handleUpdate(v); }} disabled={updating} className="text-[11px] font-bold text-green-600 uppercase">
                     {updating ? 'Salvando...' : 'Salvar'}
                   </button>
-                  <button onClick={e => { e.stopPropagation(); setEditingId(null); }} className="text-[11px] font-bold text-gray-400 uppercase">
+                  <button onClick={e => { e.stopPropagation(); setEditingTipoDia(null); }} className="text-[11px] font-bold text-gray-400 uppercase">
                     Cancelar
                   </button>
                 </div>
@@ -312,12 +309,7 @@ function AbaValores() {
             ) : (
               <>
                 <p className="text-sm font-bold text-[#B5071A]">{formatCurrency(v.valor)}</p>
-                <div className="flex items-center justify-between mt-1">
-                  <p className="text-[11px] text-gray-400">A partir de {formatDate(v.vigencia_inicio)}</p>
-                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${vigente(v) ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
-                    {vigente(v) ? 'VIGENTE' : 'ENCERRADO'}
-                  </span>
-                </div>
+                <p className="text-[11px] text-gray-400 mt-1">{v.descricao || '—'}</p>
               </>
             )}
           </>

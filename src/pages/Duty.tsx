@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate, useOutletContext } from 'react-router-dom';
+import { useOutletContext } from 'react-router-dom';
 import { AlertCircle, Info, Plus, Loader2, X, Trash2, CircleDollarSign, CheckCircle, FileSignature, Edit2 } from 'lucide-react';
 import { SearchBar } from '../components/SearchBar';
 import { Button } from '../components/Button';
@@ -39,7 +39,7 @@ const getApiErrorMessage = (
 };
 
 export function Duty() {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const { searchTerm, setSearchTerm } = useOutletContext<{
     searchTerm: string;
     setSearchTerm: (v: string) => void;
