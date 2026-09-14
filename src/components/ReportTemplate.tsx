@@ -39,13 +39,13 @@ interface ReportTemplateProps {
   logoBase64: string;
 }
 
-const RED = '#B5071A';
+// const RED = '#B5071A';
 const GRAY1 = '#111827';
-const GRAY4 = '#374151';
+// const GRAY4 = '#374151';
 const GRAY5 = '#6b7280';
 const GRAY9 = '#9ca3af';
 const BORDER = '#e5e7eb';
-const ROW_ALT = '#f9fafb';
+// const ROW_ALT = '#f9fafb';
 const FOOT_BG = '#f3f4f6';
 
 const REGULAR = 'Inter';
