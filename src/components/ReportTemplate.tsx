@@ -3,7 +3,7 @@ import { Document, Page, Text, View, Image, StyleSheet, Font } from '@react-pdf/
 let fontsRegistered = false;
 export function registerFonts() {
   if (fontsRegistered) return;
-  const base = window.location.origin;
+  const base = import.meta.env.BASE_URL;
   Font.register({
     family: 'Inter',
     fonts: [
