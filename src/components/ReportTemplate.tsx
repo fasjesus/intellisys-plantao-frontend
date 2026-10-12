@@ -16,6 +16,7 @@ export function registerFonts() {
 }
 
 export interface PlantaoDia {
+  dataISO?: string;
   data: string;
   diaSemana: string;
   observacao: string;
@@ -30,6 +31,13 @@ export interface PlantaoGroup {
   status: string;
   valorTotal: number;
   dias: PlantaoDia[];
+  meses?: PlantaoMes[];
+}
+
+export interface PlantaoMes {
+  chave: string;
+  titulo: string;
+  dias: PlantaoDia[];
 }
 
 interface ReportTemplateProps {
@@ -37,6 +45,7 @@ interface ReportTemplateProps {
   filtrosText: string;
   emitidoEm: string;
   logoBase64: string;
+  quebrarPorMes?: boolean;
 }
 
 // const RED = '#B5071A';
@@ -67,6 +76,7 @@ const s = StyleSheet.create({
   filterLabel: { fontWeight: 700, color: GRAY1 },
 
   plantaoBlock: { marginBottom: 35 },
+  monthTitle: { fontFamily: REGULAR, fontWeight: 700, fontSize: 10, color: GRAY5, marginBottom: 6, textTransform: 'uppercase' },
   
   metaContainer: { flexDirection: 'row', marginBottom: 15, paddingHorizontal: 15 },
   metaCol: { width: '50%', display: 'flex', flexDirection: 'column', gap: 6 },
@@ -98,7 +108,7 @@ const s = StyleSheet.create({
 
 const COL = { data: '20%', dia: '25%', obs: '40%', valor: '15%' };
 
-export function ReportTemplate({ plantoes, filtrosText, emitidoEm, logoBase64 }: ReportTemplateProps) {
+export function ReportTemplate({ plantoes, filtrosText, emitidoEm, logoBase64, quebrarPorMes = false }: ReportTemplateProps) {
   return (
     <Document>
       <Page size="A4" style={s.page}>
@@ -116,8 +126,13 @@ export function ReportTemplate({ plantoes, filtrosText, emitidoEm, logoBase64 }:
           </Text>
         </View>
 
-        {plantoes.map((p, idx) => (
-          <View key={idx} style={s.plantaoBlock} wrap={false}>
+        {plantoes.map((p, idx) => {
+          const meses = quebrarPorMes && p.meses?.length
+            ? p.meses
+            : [{ chave: 'completo', titulo: '', dias: p.dias }];
+
+          return meses.map((mes, indiceMes) => (
+          <View key={`${idx}-${mes.chave}`} style={s.plantaoBlock} break={quebrarPorMes && indiceMes > 0} wrap={quebrarPorMes}>
             
             <View style={s.metaContainer}>
               <View style={s.metaCol}>
@@ -146,7 +161,8 @@ export function ReportTemplate({ plantoes, filtrosText, emitidoEm, logoBase64 }:
               </View>
             </View>
 
-            <Text style={s.tableTitle}>Detalhamento do Plantão</Text>
+            <Text style={s.tableTitle}>{quebrarPorMes && indiceMes > 0 ? 'Continuação do Plantão' : 'Detalhamento do Plantão'}</Text>
+            {quebrarPorMes && <Text style={s.monthTitle}>{mes.titulo}</Text>}
             <View>
               <View style={s.tableHeader}>
                 <Text style={[s.thCell, { width: COL.data }]}>Data</Text>
@@ -155,8 +171,8 @@ export function ReportTemplate({ plantoes, filtrosText, emitidoEm, logoBase64 }:
                 <Text style={[s.thCell, s.tdRight, { width: COL.valor }]}>Valor do Dia</Text>
               </View>
 
-              {p.dias.map((d, i) => (
-                <View key={i} style={s.tableRow}>
+              {mes.dias.map((d, i) => (
+                <View key={d.dataISO ?? i} style={s.tableRow}>
                   <Text style={[s.tdCell, { width: COL.data }]}>{d.data}</Text>
                   <Text style={[s.tdCell, { width: COL.dia }]}>{d.diaSemana}</Text>
                   <Text style={[s.tdCell, { width: COL.obs }]}>{d.observacao}</Text>
@@ -166,21 +182,26 @@ export function ReportTemplate({ plantoes, filtrosText, emitidoEm, logoBase64 }:
                 </View>
               ))}
 
-              <View style={s.tableFoot}>
-                <Text style={[s.tfLabel, { width: '85%' }]}>Valor Total</Text>
-                <Text style={[s.tfValue, { width: COL.valor }]}>
-                  {p.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </Text>
-              </View>
+              {indiceMes === meses.length - 1 && (
+                <View style={s.tableFoot}>
+                  <Text style={[s.tfLabel, { width: '85%' }]}>Valor Total</Text>
+                  <Text style={[s.tfValue, { width: COL.valor }]}>
+                    {p.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </Text>
+                </View>
+              )}
             </View>
 
-            <View style={s.signatureWrap}>
-              <View style={s.signatureLine} />
-              <Text style={s.signatureText}>{p.colaborador}</Text>
-            </View>
+            {indiceMes === meses.length - 1 && (
+              <View style={s.signatureWrap}>
+                <View style={s.signatureLine} />
+                <Text style={s.signatureText}>{p.colaborador}</Text>
+              </View>
+            )}
 
           </View>
-        ))}
+          ));
+        })}
 
         <View style={s.footer} fixed>
           <Text style={s.footerL2}>Gerado automaticamente pelo sistema de gestão de plantões</Text>

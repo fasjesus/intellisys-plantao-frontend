@@ -10,10 +10,17 @@ import { statusLabel, statusClass } from '../utils/dutyStatus';
 import { getRole } from '../utils/accessControl';
 
 export interface PlantaoDia {
+  dataISO: string;
   data: string;
   diaSemana: string;
   observacao: string;
   valor: number;
+}
+
+export interface PlantaoMes {
+  chave: string;
+  titulo: string;
+  dias: PlantaoDia[];
 }
 
 export interface PlantaoGroup {
@@ -26,6 +33,7 @@ export interface PlantaoGroup {
   rawStatus: string | number;
   valorTotal: number;
   dias: PlantaoDia[];
+  meses: PlantaoMes[];
 }
 
 const getWeekDay = (date: Date) => {
@@ -37,6 +45,24 @@ const formatSafeDate = (isoDate: string) => {
   if (!isoDate) return '—';
   const d = new Date(isoDate.includes('T') ? isoDate : `${isoDate}T12:00:00Z`);
   return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+};
+
+const agruparDiasPorMes = (dias: PlantaoDia[]): PlantaoMes[] => {
+  const meses = new Map<string, PlantaoMes>();
+
+  dias.forEach(dia => {
+    const data = new Date(`${dia.dataISO}T12:00:00Z`);
+    const chave = dia.dataISO.slice(0, 7);
+    const mes = meses.get(chave) ?? {
+      chave,
+      titulo: new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(data),
+      dias: [],
+    };
+    mes.dias.push(dia);
+    meses.set(chave, mes);
+  });
+
+  return Array.from(meses.values());
 };
 
 export function Reports() {
@@ -116,6 +142,7 @@ export function Reports() {
         const diasDetalhados: PlantaoDia[] = diasOrdenados.map((d: any, index: number) => {
           const dataDia = new Date(`${d.dataBruta}T12:00:00Z`);
           return {
+            dataISO: d.dataBruta,
             data: formatSafeDate(d.dataBruta),
             diaSemana: getWeekDay(dataDia),
             observacao: index === 0 ? (p.observacaoGeral || '') : '',
@@ -132,7 +159,8 @@ export function Reports() {
           status: statusLabel(p.status),
           rawStatus: p.status, 
           valorTotal: Number(p.valor_total || 0),
-          dias: diasDetalhados
+          dias: diasDetalhados,
+          meses: agruparDiasPorMes(diasDetalhados),
         };
       });
 
@@ -205,7 +233,8 @@ export function Reports() {
         plantoes: plantoesList, 
         filtrosText, 
         emitidoEm, 
-        logoBase64 
+        logoBase64,
+        quebrarPorMes: true,
       });
       
       const blob = await pdf(element).toBlob();
@@ -312,21 +341,27 @@ export function Reports() {
                   </div>
                   
                   <div className="border border-gray-100 rounded-lg overflow-hidden">
-                    <div className="grid grid-cols-[1fr_1.2fr_2fr_1fr] bg-gray-50 border-b border-gray-100 px-4 py-2">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Data</span>
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Dia da Semana</span>
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Observação</span>
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Valor</span>
-                    </div>
-                    
-                    {p.dias.map((d, i) => (
-                      <div key={i} className="grid grid-cols-[1fr_1.2fr_2fr_1fr] px-4 py-2.5 border-b border-gray-50 last:border-0 items-center">
-                        <span className="text-xs text-gray-600 font-medium">{d.data}</span>
-                        <span className="text-xs text-gray-600">{d.diaSemana}</span>
-                        <span className="text-xs text-gray-500 truncate" title={d.observacao}>{d.observacao || '—'}</span>
-                        <span className="text-xs font-bold text-gray-700 text-right">
-                          {d.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                        </span>
+                    {p.meses.map(mes => (
+                      <div key={mes.chave} className="border-b border-gray-100 last:border-0">
+                        <div className="bg-gray-50 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                          {mes.titulo}
+                        </div>
+                        <div className="grid grid-cols-[1fr_1.2fr_2fr_1fr] bg-gray-50 border-y border-gray-100 px-4 py-2">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Data</span>
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Dia da Semana</span>
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Observação</span>
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Valor</span>
+                        </div>
+                        {mes.dias.map(d => (
+                          <div key={d.dataISO} className="grid grid-cols-[1fr_1.2fr_2fr_1fr] px-4 py-2.5 border-b border-gray-50 last:border-0 items-center">
+                            <span className="text-xs text-gray-600 font-medium">{d.data}</span>
+                            <span className="text-xs text-gray-600">{d.diaSemana}</span>
+                            <span className="text-xs text-gray-500 truncate" title={d.observacao}>{d.observacao || '—'}</span>
+                            <span className="text-xs font-bold text-gray-700 text-right">
+                              {d.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     ))}
                     
