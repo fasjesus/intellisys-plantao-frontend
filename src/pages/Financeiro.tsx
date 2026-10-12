@@ -331,6 +331,9 @@ function AbaFeriados() {
   const [feriados, setFeriados] = useState<Feriado[]>([]);
   const [loading, setLoading] = useState(true);
   const [ano, setAno] = useState(new Date().getFullYear());
+  const [editingFeriado, setEditingFeriado] = useState<Feriado | null>(null);
+  const [novaData, setNovaData] = useState('');
+  const [updating, setUpdating] = useState(false);
 
   async function load(a: number) {
     setLoading(true);
@@ -345,6 +348,29 @@ function AbaFeriados() {
   }
 
   useEffect(() => { load(ano); }, [ano]);
+
+  const openEdit = (feriado: Feriado) => {
+    setEditingFeriado(feriado);
+    setNovaData(feriado.data.split('T')[0]);
+  };
+
+  const handleUpdate = async (e: React.SyntheticEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editingFeriado || !novaData) return;
+    setUpdating(true);
+    try {
+      await scaleService.updateFeriado(editingFeriado.id, novaData);
+      setEditingFeriado(null);
+      await load(ano);
+    } catch (err: unknown) {
+      const errorMsg = axios.isAxiosError(err)
+        ? err.response?.data?.error || err.response?.data?.message || 'Erro ao atualizar feriado.'
+        : 'Erro interno ao atualizar feriado.';
+      alert(`Erro: ${errorMsg}`);
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -375,8 +401,9 @@ function AbaFeriados() {
           { header: 'Nome' },
           { header: 'Data' },
           { header: 'Tipo' },
+          { header: 'Ações' },
         ]}
-        gridCols="grid-cols-[2fr_1fr_1fr]"
+        gridCols="grid-cols-[2fr_1fr_1fr_100px]"
         items={feriados}
         rowKey={f => f.id}
         emptyMessage={`Nenhum feriado encontrado para ${ano}.`}
@@ -386,6 +413,13 @@ function AbaFeriados() {
             <span className="text-xs font-bold text-gray-700">{f.nome}</span>
             <span className="text-xs text-gray-500">{formatDate(f.data)}</span>
             <span className="text-xs text-gray-500">{f.descricao || '—'}</span>
+            <div>
+              {f.descricao === 'MUNICIPAL' && (
+                <button onClick={() => openEdit(f)} className="text-[10px] font-bold text-gray-400 hover:text-[#B5071A] flex items-center gap-1 transition-colors">
+                  <Pencil size={12} /> Editar
+                </button>
+              )}
+            </div>
           </>
         )}
         renderMobileCard={f => (
@@ -395,9 +429,28 @@ function AbaFeriados() {
               <p className="text-[11px] text-gray-400">{formatDate(f.data)}</p>
               <p className="text-[11px] text-gray-400">{f.descricao || '—'}</p>
             </div>
+            {f.descricao === 'MUNICIPAL' && (
+              <button onClick={() => openEdit(f)} className="mt-3 text-[11px] font-bold text-[#B5071A] uppercase">Editar data</button>
+            )}
           </>
         )}
       />
+
+      {editingFeriado && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <form onSubmit={handleUpdate} className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 flex flex-col gap-5">
+            <div>
+              <h3 className="text-base font-bold text-[#B5071A]">Editar feriado municipal</h3>
+              <p className="text-xs text-gray-500 mt-1">{editingFeriado.nome}</p>
+            </div>
+            <input type="date" required value={novaData} onChange={e => setNovaData(e.target.value)} className="h-11 px-4 rounded-xl border border-gray-200 text-sm text-gray-700 focus:border-[#B5071A] outline-none" />
+            <div className="flex justify-end gap-3">
+              <Button type="button" variant="secondary" label="Cancelar" onClick={() => setEditingFeriado(null)} />
+              <Button type="submit" disabled={updating} label={updating ? 'Salvando...' : 'Salvar'} icon={updating ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} />
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

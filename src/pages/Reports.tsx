@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Calendar as CalendarIcon, User as UserIcon, Loader2, Printer, Filter } from 'lucide-react';
+import { FileText, Calendar as CalendarIcon, User as UserIcon, Loader2, Printer, Filter, CircleDollarSign } from 'lucide-react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { collaboratorService, type Collaborator } from '../services/collaboratorService';
 import { dutyService } from '../services/dutyService';
@@ -7,6 +7,7 @@ import { Button } from '../components/Button';
 import { pdf } from '@react-pdf/renderer';
 import { ReportTemplate, registerFonts } from '../components/ReportTemplate';
 import { statusLabel, statusClass } from '../utils/dutyStatus';
+import { getRole } from '../utils/accessControl';
 
 export interface PlantaoDia {
   data: string;
@@ -17,6 +18,7 @@ export interface PlantaoDia {
 
 export interface PlantaoGroup {
   id: string;
+  plantaoId: string;
   colaborador: string;
   periodoInicio: string;
   periodoFim: string;
@@ -52,6 +54,8 @@ export function Reports() {
   const [plantoesList, setPlantoesList] = useState<PlantaoGroup[]>([]);
   const [loading, setLoading] = useState(false);
   const [generated, setGenerated] = useState(false);
+  const [payingPlantaoID, setPayingPlantaoID] = useState<string | null>(null);
+  const isFinanceiro = getRole() === 'financeiro';
 
   useEffect(() => {
     collaboratorService.getAll()
@@ -121,6 +125,7 @@ export function Reports() {
 
         return {
           id: String(p.id || '—').split('-')[0].toUpperCase(),
+          plantaoId: String(p.id),
           colaborador: p.colaborador_nome || '—',
           periodoInicio: formatSafeDate(p.data_inicio),
           periodoFim: formatSafeDate(p.data_fim),
@@ -150,6 +155,22 @@ export function Reports() {
   const onSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     handleGenerate(startDate, endDate, employee, statusFilter);
+  };
+
+  const handlePagar = async (plantao: PlantaoGroup) => {
+    if (!confirm(`Confirmar o pagamento do plantão de ${plantao.colaborador}?`)) return;
+    setPayingPlantaoID(plantao.plantaoId);
+    try {
+      await dutyService.pagar(plantao.plantaoId);
+      setPlantoesList(current => current.map(item => item.plantaoId === plantao.plantaoId
+        ? { ...item, rawStatus: 4, status: statusLabel(4) }
+        : item));
+      alert('Plantão pago com sucesso!');
+    } catch {
+      alert('Erro ao realizar o pagamento do plantão.');
+    } finally {
+      setPayingPlantaoID(null);
+    }
   };
 
   const handlePrint = async () => {
@@ -311,9 +332,20 @@ export function Reports() {
                     
                     <div className="bg-gray-50 flex justify-between px-4 py-3 border-t border-gray-100 items-center">
                       <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wider">Total do Plantão</span>
-                      <span className="text-sm font-bold text-[#B5071A]">
-                        {p.valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                      </span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-bold text-[#B5071A]">
+                          {p.valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </span>
+                        {isFinanceiro && String(p.rawStatus) === '2' && (
+                          <Button
+                            type="button"
+                            label={payingPlantaoID === p.plantaoId ? 'Pagando...' : 'Pagar'}
+                            icon={payingPlantaoID === p.plantaoId ? <Loader2 size={14} className="animate-spin" /> : <CircleDollarSign size={14} />}
+                            disabled={payingPlantaoID !== null}
+                            onClick={() => handlePagar(p)}
+                          />
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

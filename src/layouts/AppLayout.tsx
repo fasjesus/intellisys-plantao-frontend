@@ -19,7 +19,7 @@ export function AppLayout() {
       try {
         const usuario = await authService.getUsuario();
         setUserRole(usuario.role?.toLowerCase() ?? 'colaborador');
-        if (usuario.id_colaborador) {
+        if (usuario.id_colaborador && usuario.role?.toLowerCase() !== 'financeiro') {
           const colaborador = await authService.getColaborador(usuario.id_colaborador);
           setUserName(colaborador.nome || 'USUÁRIO');
           setUserPhoto(colaborador.foto_url || undefined);

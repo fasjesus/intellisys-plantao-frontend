@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 /*
- VITE_API_URL=http://localhost:8000/api/v1/ npm run dev
- VITE_API_URL=http://localhost:8000/api/v1/ npm run dev -- --port 5173
+ VITE_API_URL=http://localhost:8080/api/v1/ npm run dev
+ VITE_API_URL=http://localhost:8080/api/v1/ npm run dev -- --port 5173
 */
 
 const api = axios.create({

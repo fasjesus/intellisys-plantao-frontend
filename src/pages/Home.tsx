@@ -54,6 +54,10 @@ export function Home() {
     async function loadData() {
       try {
         const usuario = await authService.getUsuario();
+        if (usuario.role?.toLowerCase() === 'financeiro') {
+          navigate('/financeiro', { replace: true });
+          return;
+        }
         const admin = usuario.role?.toLowerCase() === 'admin';
         setIsAdmin(admin);
         const colabId = usuario.id_colaborador;
@@ -78,7 +82,7 @@ export function Home() {
       }
     }
     loadData();
-  }, []);
+  }, [navigate]);
 
   const handleSelectRow = (p: Duty) => {
     if (selected?.id === p.id) {

@@ -1,7 +1,7 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { AppLayout } from './layouts/AppLayout';
-import { AdminRoute } from './components/ProtectedRoute';
+import { AdminRoute, RoleRoute } from './components/ProtectedRoute';
 import { Login } from './pages/Login';
 import { Home } from './pages/Home';
 import { Month } from './pages/Scale/Month';
@@ -39,20 +39,20 @@ export function App() {
       <Route element={<AppLayout />}>
         <Route path="/scale/month" element={<AdminRoute><Month /></AdminRoute>} />
         <Route path="/scale/suggestion" element={<AdminRoute><Suggestion /></AdminRoute>} />
-        <Route path="/users" element={<AdminRoute><UsersAll /></AdminRoute>} />
+        <Route path="/users" element={<RoleRoute allowedRoles={['admin', 'gerente', 'financeiro']}><UsersAll /></RoleRoute>} />
         <Route path="/users/permissions" element={<AdminRoute><Permissions /></AdminRoute>} />
         <Route path="/users/details/:id" element={<AdminRoute><Details /></AdminRoute>} />
         <Route path="/users/edit/:id" element={<AdminRoute><Edit /></AdminRoute>} />
         <Route path="/users/duty-history/:id" element={<AdminRoute><DutyHistory /></AdminRoute>} />
         <Route path="/users/create" element={<AdminRoute><Create /></AdminRoute>} />
         <Route path="/convites" element={<AdminRoute><Convites /></AdminRoute>} />
-        <Route path="/financeiro" element={<AdminRoute><Financeiro /></AdminRoute>} />
+        <Route path="/financeiro" element={<RoleRoute allowedRoles={['admin', 'financeiro']}><Financeiro /></RoleRoute>} />
         <Route path="/cargos-setores" element={<AdminRoute><CargosSetores /></AdminRoute>} />
         <Route path="/perfil" element={<Perfil />} />
         <Route path="/modelo-comunicacao" element={<AdminRoute><ModeloComunicacao /></AdminRoute>} />
-        <Route path="/reports" element={<AdminRoute><Reports /></AdminRoute>} />
+        <Route path="/reports" element={<RoleRoute allowedRoles={['admin', 'gerente', 'financeiro']}><Reports /></RoleRoute>} />
         <Route path="/duty" element={<AdminRoute><Duty /></AdminRoute>} />
-        <Route path="/config/email" element={<ConfigEmail />} />
+        <Route path="/config/email" element={<AdminRoute><ConfigEmail /></AdminRoute>} />
       </Route>
 
       {/* Rota de erro 404 */}

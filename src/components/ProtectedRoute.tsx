@@ -1,19 +1,14 @@
 import { Navigate } from 'react-router-dom';
+import { getRole } from '../utils/accessControl';
 
-function getRole(): string {
-  try {
-    const raw = localStorage.getItem('@Intellisys:user');
-    if (!raw) return '';
-    return JSON.parse(raw)?.role?.toLowerCase() ?? '';
-  } catch {
-    return '';
-  }
-}
-
-export function AdminRoute({ children }: { children: React.ReactNode }) {
+export function RoleRoute({ allowedRoles, children }: { allowedRoles: string[]; children: React.ReactNode }) {
   const role = getRole();
-  if (role !== 'admin' && role !== 'gerente') {
+  if (!allowedRoles.includes(role)) {
     return <Navigate to="/home" replace />;
   }
   return <>{children}</>;
+}
+
+export function AdminRoute({ children }: { children: React.ReactNode }) {
+  return <RoleRoute allowedRoles={['admin', 'gerente']}>{children}</RoleRoute>;
 }

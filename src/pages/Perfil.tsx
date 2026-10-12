@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Loader2, Save, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Save, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { Button } from '../components/Button';
 import { authService } from '../services/authService';
 import { useNavigate } from 'react-router-dom';
+import { getRole } from '../utils/accessControl';
 
 export function Perfil() {
   const navigate = useNavigate();
@@ -11,7 +12,9 @@ export function Perfil() {
   const [confirmSenha, setConfirmSenha] = useState('');
   const [showSenha, setShowSenha] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deactivating, setDeactivating] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const isFinanceiro = getRole() === 'financeiro';
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -38,6 +41,20 @@ export function Perfil() {
       alert(err?.response?.data?.error || err?.response?.data?.message || 'Erro ao atualizar. Tente novamente.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDesativarConta = async () => {
+    if (!confirm('Deseja desativar sua conta? Esta ação encerrará sua sessão.')) return;
+    setDeactivating(true);
+    try {
+      await authService.desativarConta();
+      authService.logout();
+      navigate('/');
+    } catch {
+      alert('Não foi possível desativar sua conta.');
+    } finally {
+      setDeactivating(false);
     }
   };
 
@@ -111,6 +128,20 @@ export function Perfil() {
             />
           </div>
         </form>
+
+        {isFinanceiro && <div className="mt-10 pt-6 border-t border-red-100">
+          <h3 className="text-sm font-bold text-red-700">Desativar conta</h3>
+          <p className="text-xs text-gray-500 mt-1 mb-3">Sua conta será desativada e a sessão encerrada.</p>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={deactivating}
+            label={deactivating ? 'Desativando...' : 'Desativar minha conta'}
+            icon={deactivating ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+            onClick={handleDesativarConta}
+            className="text-red-700 border-red-200 hover:bg-red-50"
+          />
+        </div>}
       </div>
     </div>
   );

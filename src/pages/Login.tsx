@@ -22,7 +22,7 @@ export function Login() {
     }
     setLoading(true);
     try {
-      await authService.login({ email: email.trim(), senha: password });
+      const usuario = await authService.login({ email: email.trim(), senha: password });
       const colaboradorRaw = localStorage.getItem('@Intellisys:colaborador');
       const colaborador = colaboradorRaw ? JSON.parse(colaboradorRaw) : null;
       if (colaborador && colaborador.status?.toLowerCase() === 'inativo') {
@@ -30,7 +30,7 @@ export function Login() {
         setError("Sua conta está inativa. Entre em contato com o administrador.");
         return;
       }
-      navigate('/home');
+      navigate(usuario.role?.toLowerCase() === 'financeiro' ? '/financeiro' : '/home');
     } catch (err: any) {
       setError(err.response?.data?.message || "E-mail ou senha incorretos.");
     } finally {

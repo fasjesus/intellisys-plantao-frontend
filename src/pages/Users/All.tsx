@@ -18,6 +18,7 @@ export function All() {
   const [sending, setSending] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isFinanceiro, setIsFinanceiro] = useState(false);
 
   const { searchTerm, setSearchTerm } = useOutletContext<{
     searchTerm: string;
@@ -29,13 +30,17 @@ export function All() {
       try {
         const usuario = await authService.getUsuario();
         const userIsAdmin = usuario?.role?.toLowerCase() === 'admin';
+        const userIsFinanceiro = usuario?.role?.toLowerCase() === 'financeiro';
         setIsAdmin(userIsAdmin);
-        if (!userIsAdmin) return;
+        setIsFinanceiro(userIsFinanceiro);
+        if (!userIsAdmin && !userIsFinanceiro) return;
 
-        const [data, usuarios] = await Promise.all([
-          collaboratorService.getAll(),
-          api.get('/admin/all'),
-        ]);
+        if (userIsFinanceiro) {
+          setCollaborators(await collaboratorService.getAll());
+          return;
+        }
+
+        const [data, usuarios] = await Promise.all([collaboratorService.getAll(), api.get('/admin/all')]);
 
         const idsComUsuario = new Set<string>(
           usuarios.data.map((u: any) => u.id_colaborador).filter(Boolean)
@@ -95,7 +100,7 @@ export function All() {
     }
   };
 
-  if (!loading && !isAdmin) {
+  if (!loading && !isAdmin && !isFinanceiro) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center">
         <div className="bg-red-50 p-4 rounded-full mb-4">
@@ -123,7 +128,9 @@ export function All() {
         <div className="flex items-center justify-center w-full mb-4 md:mb-2">
           <div className="text-center">
             <h2 className="text-xl md:text-2xl font-bold text-[#B5071A]">Colaboradores</h2>
-            <p className="text-[10px] md:text-sm text-gray-500 font-medium">Gerencie sua equipe e permissões.</p>
+            <p className="text-[10px] md:text-sm text-gray-500 font-medium">
+              {isFinanceiro ? 'Consulte os colaboradores cadastrados no sistema.' : 'Gerencie sua equipe e permissões.'}
+            </p>
           </div>
         </div>
 
@@ -155,9 +162,9 @@ export function All() {
               emptyMessage="Nenhum colaborador encontrado."
               maxHeight="400px"
               containerClassName="mb-6"
-              onRowClick={handleRowClick}
-              onRowDoubleClick={c => navigate(`/users/details/${c.id}`)}
-              isRowSelected={c => selected?.id === c.id}
+              onRowClick={isFinanceiro ? undefined : handleRowClick}
+              onRowDoubleClick={isFinanceiro ? undefined : c => navigate(`/users/details/${c.id}`)}
+              isRowSelected={isFinanceiro ? undefined : c => selected?.id === c.id}
               renderRow={c => (
                 <>
                   <span className="text-sm font-bold text-gray-400">{c.id.split('-')[0].toUpperCase()}</span>
@@ -193,7 +200,7 @@ export function All() {
         )}
 
         {/* BOTÕES DE AÇÃO */}
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 md:relative md:border-none md:p-0 md:mt-6">
+        {!isFinanceiro && <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 md:relative md:border-none md:p-0 md:mt-6">
           <div className="max-w-7xl mx-auto flex justify-end gap-2 md:gap-3">
             {isAdmin && (
               <Button
@@ -229,7 +236,7 @@ export function All() {
             )}
             <Button label="Voltar" variant="secondary" onClick={() => navigate('/home')} />
           </div>
-        </div>
+        </div>}
       </div>
     </div>
   );

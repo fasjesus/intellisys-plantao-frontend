@@ -8,7 +8,7 @@ export const authService = {
       localStorage.setItem('@Intellisys:user', JSON.stringify(response.data));
 
       const userAccount = response.data;
-      if (userAccount.id_colaborador) {
+      if (userAccount.id_colaborador && userAccount.role?.toLowerCase() !== 'financeiro') {
         try {
           const colabResponse = await api.get(`/colaboradores/${userAccount.id_colaborador}`);
           localStorage.setItem('@Intellisys:colaborador', JSON.stringify(colabResponse.data));

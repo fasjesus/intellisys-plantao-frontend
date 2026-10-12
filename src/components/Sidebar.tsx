@@ -90,11 +90,19 @@ export function Sidebar({ isOpen, onToggle, onClose, onLogout, role }: SidebarPr
   const location = useLocation();
   const navigate = useNavigate();
   const isAdmin = role === 'admin' || role === 'gerente';
+  const isFinanceiro = role === 'financeiro';
 
-  const visibleSections = sections
-    .filter(s => !s.adminOnly || isAdmin)
-    .map(s => ({ ...s, items: s.items.filter(i => !i.adminOnly || isAdmin) }))
-    .filter(s => s.items.length > 0);
+  const visibleSections = isFinanceiro
+    ? [
+        { ...sections[0], items: sections[0].items.filter(item => item.path === '/users') },
+        sections[1],
+        { ...sections[2], title: 'Financeiro', adminOnly: false, items: sections[2].items.filter(item => item.path === '/financeiro') },
+        sections[3],
+      ]
+    : sections
+        .filter(s => !s.adminOnly || isAdmin)
+        .map(s => ({ ...s, items: s.items.filter(i => !i.adminOnly || isAdmin) }))
+        .filter(s => s.items.length > 0);
 
   const handleNavigate = (path: string) => {
     navigate(path);
